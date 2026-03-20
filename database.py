@@ -27,15 +27,20 @@ def get_db():
     return _client[DB_NAME]
 
 
+
 def init_db():
     """Create indexes on first run (idempotent)."""
-    db = get_db()
-    db.users.create_index("username", unique=True)
-    db.users.create_index("email",    unique=True)
-    db.chat_history.create_index(
-        [("user_id", ASCENDING), ("timestamp", ASCENDING)]
-    )
-    print("✅ MongoDB connected and indexes ensured.")
+    try:
+        db = get_db()
+        db.users.create_index("username", unique=True)
+        db.users.create_index("email",    unique=True)
+        db.chat_history.create_index(
+            [("user_id", ASCENDING), ("timestamp", ASCENDING)]
+        )
+        print("✅ MongoDB connected and indexes ensured.")
+    except Exception as e:
+        print(f"⚠️ MongoDB init warning: {e}")
+        print("App will continue — MongoDB will retry on first request.")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
