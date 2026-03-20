@@ -46,7 +46,7 @@ from langgraph.prebuilt import create_react_agent
 import os
 from dotenv import load_dotenv
 load_dotenv()
-GROQ_API_KEY = os.getenv("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", "")
+GROQ_API_KEY = os.getenv("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", "")
 
 tools = [ask_mental_health_specialist, emergency_call_tool, find_nearby_therapists_by_location]
 
