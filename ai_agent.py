@@ -43,7 +43,10 @@ def find_nearby_therapists_by_location(location: str) -> str:
 # ── Agent setup using Groq (free) ─────────────────────────────────────────────
 from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
-from config import GROQ_API_KEY
+import os
+from dotenv import load_dotenv
+load_dotenv()
+GROQ_API_KEY = os.getenv("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", "")
 
 tools = [ask_mental_health_specialist, emergency_call_tool, find_nearby_therapists_by_location]
 
