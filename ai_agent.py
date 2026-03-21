@@ -1,92 +1,60 @@
-from langchain_core.tools import tool
-from tools import query_medgemma, call_emergency
-
-@tool
-def ask_mental_health_specialist(query: str) -> str:
-    """
-    Generate a therapeutic response using the MedGemma model.
-    Use this for all general user queries, mental health questions, emotional concerns,
-    or to offer empathetic, evidence-based guidance in a conversational tone.
-    """
-    return query_medgemma(query)
-
-
-@tool
-def emergency_call_tool() -> None:
-    """
-    Trigger a local emergency alarm.
-    Use this only if the user expresses suicidal ideation, intent to self-harm,
-    or describes a mental health emergency requiring immediate help.
-    """
-    call_emergency()
-
-
-@tool
-def find_nearby_therapists_by_location(location: str) -> str:
-    """
-    Finds and returns a list of licensed therapists near the specified location.
-
-    Args:
-        location (str): The name of the city or area in which the user is seeking therapy support.
-
-    Returns:
-        str: A newline-separated string containing therapist names and contact info.
-    """
-    return (
-        f"Here are some therapists near {location}:\n"
-        "- Dr. Ayesha Kapoor - +1 (555) 123-4567\n"
-        "- Dr. James Patel - +1 (555) 987-6543\n"
-        "- MindCare Counseling Center - +1 (555) 222-3333"
-    )
-
-
-# ── Agent setup using Groq (free) ─────────────────────────────────────────────
-from langchain_groq import ChatGroq
-from langgraph.prebuilt import create_react_agent
 import os
-from dotenv import load_dotenv
-load_dotenv()
-GROQ_API_KEY = os.getenv("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", "")
+from groq import Groq
 
-tools = [ask_mental_health_specialist, emergency_call_tool, find_nearby_therapists_by_location]
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+client = Groq(api_key=GROQ_API_KEY)
 
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    temperature=0.2,
-    api_key=GROQ_API_KEY
-)
+SYSTEM_PROMPT = """You are Dr. Emily Hartman, a warm and experienced clinical psychologist.
+Respond to patients with:
+1. Emotional attunement
+2. Gentle normalization
+3. Practical guidance
+4. Strengths-focused support
 
-graph = create_react_agent(llm, tools=tools)
+Always respond with empathy and ask open ended questions to understand the root cause.
+Keep responses concise and warm. Never use brackets or labels."""
 
-SYSTEM_PROMPT = """
-You are an AI engine supporting mental health conversations with warmth and vigilance.
-You have access to three tools:
-
-1. `ask_mental_health_specialist`: Use this tool to answer all emotional or psychological queries with therapeutic guidance.
-2. `find_nearby_therapists_by_location`: Use this tool if the user asks about nearby therapists or if recommending local professional help would be beneficial.
-3. `emergency_call_tool`: Use this immediately if the user expresses suicidal thoughts, self-harm intentions, or is in crisis.
-
-Always take necessary action. Respond kindly, clearly, and supportively.
-"""
-
-def parse_response(stream):
-    tool_called_name = "None"
-    final_response = None
-
-    for s in stream:
-        tool_data = s.get('tools')
-        if tool_data:
-            tool_messages = tool_data.get('messages')
-            if tool_messages and isinstance(tool_messages, list):
-                for msg in tool_messages:
-                    tool_called_name = getattr(msg, 'name', 'None')
-
-        agent_data = s.get('agent')
-        if agent_data:
-            messages = agent_data.get('messages')
-            if messages and isinstance(messages, list):
-                for msg in messages:
-                    if msg.content:
-                        final_response = msg.content
-
-    return tool_called_name, final_response
+def get_response(message: str) -> tuple[str, str]:
+    """Call Groq directly and return (response, tool_called)."""
+    
+    # Check for emergency keywords
+    emergency_keywords = [
+        "suicide", "kill myself", "end my life", "want to die",
+        "self harm", "hurt myself", "no reason to live"
+    ]
+    
+    if any(keyword in message.lower() for keyword in emergency_keywords):
+        from tools import call_emergency
+        call_emergency()
+        return (
+            "I'm very concerned about your safety right now. "
+            "Please know you are not alone. I've triggered an emergency alert. "
+            "Please call your local emergency services immediately or reach out to someone you trust. "
+            "You matter and help is available. 🙏",
+            "emergency_call_tool"
+        )
+    
+    # Check for therapist request
+    therapist_keywords = ["therapist", "counselor", "psychiatrist", "doctor near", "help near"]
+    if any(keyword in message.lower() for keyword in therapist_keywords):
+        return (
+            "I'd recommend reaching out to a mental health professional near you. "
+            "You can search for licensed therapists on Practo, Vandrevala Foundation (1860-2662-345), "
+            "or iCall (9152987821) if you're in India. Would you like to tell me more about what you're going through?",
+            "find_nearby_therapists_by_location"
+        )
+    
+    # Normal response via Groq
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": message}
+            ],
+            max_tokens=350,
+            temperature=0.7
+        )
+        return response.choices[0].message.content, "None"
+    except Exception as e:
+        return "I'm here for you. Could you please try again in a moment?", "None"
