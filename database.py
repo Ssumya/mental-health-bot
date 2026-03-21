@@ -26,11 +26,9 @@ def get_db():
         _client = MongoClient(
             MONGO_URI,
             serverSelectionTimeoutMS=10000,
-            tls=True,
             tlsAllowInvalidCertificates=True
         )
     return _client[DB_NAME]
-
 
 
 def init_db():
