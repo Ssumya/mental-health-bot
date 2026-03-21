@@ -359,7 +359,7 @@ let breathInterval = null, timerInterval = null;
 
 // ── Boot ──────────────────────────────────────────────────────────
 if (token && me) { showApp(); loadAll(); }
-renderExercises();
+document.addEventListener('DOMContentLoaded', renderExercises);
 
 // ── Auth ──────────────────────────────────────────────────────────
 function switchTab(t) {
