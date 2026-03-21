@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 import os
@@ -96,6 +98,9 @@ def mood_history(current_user: dict = Depends(get_current_user)):
 def health():
     return {"status": "ok"}
 
+@app.get("/")
+def serve_frontend():
+    return FileResponse("index.html")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
