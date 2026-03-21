@@ -42,6 +42,17 @@ def init_db():
                 timestamp TIMESTAMPTZ DEFAULT NOW()
             )
         """)
+        # Mood logs table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS mood_logs (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                mood TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                note TEXT DEFAULT '',
+                timestamp TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
         conn.commit()
         cur.close()
         conn.close()
@@ -174,3 +185,52 @@ def get_all_users_summary() -> list[dict]:
 
 # ── Auto-init on import ───────────────────────────────────────────────────────
 init_db()
+
+
+# ── Mood operations ───────────────────────────────────────────────────────────
+def save_mood(user_id: str, mood: str, score: int, note: str = "") -> dict:
+    """Save a mood log entry."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        """INSERT INTO mood_logs (user_id, mood, score, note)
+           VALUES (%s, %s, %s, %s) RETURNING id, mood, score, note, timestamp""",
+        (int(user_id), mood, score, note)
+    )
+    row = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return {
+        "id":        row["id"],
+        "mood":      row["mood"],
+        "score":     row["score"],
+        "note":      row["note"],
+        "timestamp": row["timestamp"].isoformat(),
+    }
+
+
+def get_mood_history(user_id: str, limit: int = 30) -> list[dict]:
+    """Return recent mood logs for a user."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        """SELECT mood, score, note, timestamp
+           FROM mood_logs
+           WHERE user_id = %s
+           ORDER BY timestamp DESC
+           LIMIT %s""",
+        (int(user_id), limit)
+    )
+    rows = list(cur.fetchall())
+    cur.close()
+    conn.close()
+    return [
+        {
+            "mood":      r["mood"],
+            "score":     r["score"],
+            "note":      r["note"],
+            "timestamp": r["timestamp"].isoformat(),
+        }
+        for r in rows
+    ]
