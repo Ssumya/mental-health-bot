@@ -1,170 +1,174 @@
 """
-database.py  ·  MongoDB backend
-Collections:
-  - users        : { username, email, password_hash, created_at }
-  - chat_history : { user_id (ObjectId), role, message, tool_called, timestamp }
+database.py · Supabase (PostgreSQL) backend
+Tables:
+  - users        : { id, username, email, password_hash, created_at }
+  - chat_history : { id, user_id, role, message, tool_called, timestamp }
 """
 
 import hashlib
 import os
-from datetime import datetime, timezone
-
-from pymongo import MongoClient, ASCENDING, DESCENDING
-from pymongo.errors import DuplicateKeyError
-from bson import ObjectId
+import psycopg2
+import psycopg2.extras
 
 # ── Connection ────────────────────────────────────────────────────────────────
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME   = os.getenv("MONGO_DB",  "mental_health_bot")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 
-_client: MongoClient | None = None
-
-def get_db():
-    """Return the database handle (lazy singleton connection)."""
-    global _client
-    if _client is None:
-        _client = MongoClient(
-            MONGO_URI,
-            serverSelectionTimeoutMS=10000,
-            tlsAllowInvalidCertificates=True
-        )
-    return _client[DB_NAME]
+def get_conn():
+    """Return a new PostgreSQL connection."""
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
 def init_db():
-    """Create indexes on first run (idempotent)."""
+    """Create tables on first run (idempotent)."""
     try:
-        db = get_db()
-        db.users.create_index("username", unique=True)
-        db.users.create_index("email",    unique=True)
-        db.chat_history.create_index(
-            [("user_id", ASCENDING), ("timestamp", ASCENDING)]
-        )
-        print("✅ MongoDB connected and indexes ensured.")
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS chat_history (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                role TEXT NOT NULL,
+                message TEXT NOT NULL,
+                tool_called TEXT DEFAULT 'None',
+                timestamp TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+        print("✅ Supabase connected and tables ensured.")
     except Exception as e:
-        print(f"⚠️ MongoDB init warning: {e}")
-        print("App will continue — MongoDB will retry on first request.")
+        print(f"⚠️ Database init warning: {e}")
+        print("App will continue — DB will retry on first request.")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
 def hash_password(password: str) -> str:
-    """SHA-256 with a fixed salt (upgrade to bcrypt for production)."""
     salt = "mental_health_bot_salt_2024"
     return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
-
-def _serialize_user(doc: dict) -> dict:
-    return {
-        "id":       str(doc["_id"]),
-        "username": doc["username"],
-        "email":    doc["email"],
-    }
-
-def _serialize_message(doc: dict) -> dict:
-    ts = doc.get("timestamp")
-    return {
-        "role":        doc["role"],
-        "message":     doc["message"],
-        "tool_called": doc.get("tool_called", "None"),
-        "timestamp":   ts.isoformat() if isinstance(ts, datetime) else str(ts),
-    }
 
 
 # ── User operations ───────────────────────────────────────────────────────────
 def create_user(username: str, email: str, password: str) -> dict:
-    """Insert a new user. Returns serialized user dict, or raises ValueError on duplicate."""
-    db = get_db()
-    doc = {
-        "username":      username.strip(),
-        "email":         email.strip().lower(),
-        "password_hash": hash_password(password),
-        "created_at":    _now(),
-    }
+    """Insert a new user. Returns user dict or raises ValueError on duplicate."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
-        result = db.users.insert_one(doc)
-        doc["_id"] = result.inserted_id
-        return _serialize_user(doc)
-    except DuplicateKeyError as e:
+        cur.execute(
+            """INSERT INTO users (username, email, password_hash)
+               VALUES (%s, %s, %s) RETURNING id, username, email""",
+            (username.strip(), email.strip().lower(), hash_password(password))
+        )
+        row = cur.fetchone()
+        conn.commit()
+        return {"id": str(row["id"]), "username": row["username"], "email": row["email"]}
+    except psycopg2.errors.UniqueViolation as e:
+        conn.rollback()
         msg = str(e)
         if "username" in msg:
             raise ValueError("Username already taken.")
         elif "email" in msg:
             raise ValueError("Email already registered.")
         raise
+    finally:
+        cur.close()
+        conn.close()
 
 
 def authenticate_user(username: str, password: str) -> dict | None:
-    """Verify credentials. Returns serialized user dict on success, None on failure."""
-    db = get_db()
-    doc = db.users.find_one({
-        "username":      username.strip(),
-        "password_hash": hash_password(password),
-    })
-    return _serialize_user(doc) if doc else None
+    """Verify credentials. Returns user dict on success, None on failure."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        """SELECT id, username, email FROM users
+           WHERE username = %s AND password_hash = %s""",
+        (username.strip(), hash_password(password))
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if row:
+        return {"id": str(row["id"]), "username": row["username"], "email": row["email"]}
+    return None
 
 
 # ── Chat history operations ───────────────────────────────────────────────────
 def save_message(user_id: str, role: str, message: str, tool_called: str = "None"):
     """Append one message to chat_history."""
-    db = get_db()
-    db.chat_history.insert_one({
-        "user_id":     ObjectId(user_id),
-        "role":        role,
-        "message":     message,
-        "tool_called": tool_called,
-        "timestamp":   _now(),
-    })
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO chat_history (user_id, role, message, tool_called)
+           VALUES (%s, %s, %s, %s)""",
+        (int(user_id), role, message, tool_called)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 def get_user_history(user_id: str, limit: int = 100) -> list[dict]:
-    """Return the most recent `limit` messages, ordered oldest-first."""
-    db = get_db()
-    cursor = (
-        db.chat_history
-        .find({"user_id": ObjectId(user_id)})
-        .sort("timestamp", DESCENDING)
-        .limit(limit)
+    """Return the most recent messages ordered oldest-first."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        """SELECT role, message, tool_called, timestamp
+           FROM chat_history
+           WHERE user_id = %s
+           ORDER BY timestamp DESC
+           LIMIT %s""",
+        (int(user_id), limit)
     )
-    docs = list(cursor)
-    docs.reverse()
-    return [_serialize_message(d) for d in docs]
+    rows = list(cur.fetchall())
+    cur.close()
+    conn.close()
+    rows.reverse()
+    return [
+        {
+            "role":        r["role"],
+            "message":     r["message"],
+            "tool_called": r["tool_called"],
+            "timestamp":   r["timestamp"].isoformat() if r["timestamp"] else "",
+        }
+        for r in rows
+    ]
 
 
 def get_all_users_summary() -> list[dict]:
-    """Admin view: each user with message count and last-active timestamp."""
-    db = get_db()
-    pipeline = [
-        {
-            "$lookup": {
-                "from":         "chat_history",
-                "localField":   "_id",
-                "foreignField": "user_id",
-                "as":           "messages",
-            }
-        },
-        {
-            "$project": {
-                "username":      1,
-                "email":         1,
-                "created_at":    1,
-                "message_count": {"$size": "$messages"},
-                "last_active":   {"$max": "$messages.timestamp"},
-            }
-        },
-        {"$sort": {"created_at": DESCENDING}},
-    ]
+    """Admin view: each user with message count and last active."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT u.id, u.username, u.email, u.created_at,
+               COUNT(ch.id) as message_count,
+               MAX(ch.timestamp) as last_active
+        FROM users u
+        LEFT JOIN chat_history ch ON u.id = ch.user_id
+        GROUP BY u.id
+        ORDER BY u.created_at DESC
+    """)
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
     return [
         {
-            "id":            str(d["_id"]),
-            "username":      d["username"],
-            "email":         d["email"],
-            "created_at":    d["created_at"].isoformat() if isinstance(d.get("created_at"), datetime) else "",
-            "message_count": d.get("message_count", 0),
-            "last_active":   d["last_active"].isoformat() if isinstance(d.get("last_active"), datetime) else None,
+            "id":            str(r["id"]),
+            "username":      r["username"],
+            "email":         r["email"],
+            "created_at":    r["created_at"].isoformat() if r["created_at"] else "",
+            "message_count": r["message_count"],
+            "last_active":   r["last_active"].isoformat() if r["last_active"] else None,
         }
-        for d in list(db.users.aggregate(pipeline))
+        for r in rows
     ]
 
 
