@@ -2,7 +2,7 @@ fastapi
 uvicorn
 pydantic
 PyJWT
-pymongo
+psycopg2
 langchain
 langchain-groq
 langchain-core
