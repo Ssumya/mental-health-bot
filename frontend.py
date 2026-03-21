@@ -5,8 +5,8 @@ import streamlit as st
 import requests
 
 # ── Config ─────────────────────────────────────────────────────────────────
-BACKEND = "http://localhost:8000"
-
+import os
+BACKEND = os.getenv("BACKEND_URL", "http://localhost:8000")
 st.set_page_config(
     page_title="SafeSpace · AI Therapist",
     page_icon="🌿",
