@@ -778,6 +778,7 @@ function showToast(m){const e=document.getElementById('toast');e.textContent=m;e
 document.addEventListener('DOMContentLoaded', renderExercises);
 document.getElementById('li-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('reg-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doRegister()});
+  window.onload = function(){ if(!token) renderExercises(); };
 </script>
 </body>
 </html>
