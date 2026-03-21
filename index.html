@@ -774,6 +774,8 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function showToast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),3000)}
 
 // Enter key shortcuts
+  // Render exercises on page load
+document.addEventListener('DOMContentLoaded', renderExercises);
 document.getElementById('li-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('reg-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doRegister()});
 </script>
