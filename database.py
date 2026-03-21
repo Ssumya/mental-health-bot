@@ -23,7 +23,12 @@ def get_db():
     """Return the database handle (lazy singleton connection)."""
     global _client
     if _client is None:
-        _client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        _client = MongoClient(
+            MONGO_URI,
+            serverSelectionTimeoutMS=10000,
+            tls=True,
+            tlsAllowInvalidCertificates=True
+        )
     return _client[DB_NAME]
 
 
