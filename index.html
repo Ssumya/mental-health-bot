@@ -1,772 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>SafeSpace · Mental Health AI</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#212121;--bg2:#2f2f2f;--bg3:#3a3a3a;
-  --surface:#2f2f2f;--surface2:#383838;
-  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.06);
-  --text:#ececec;--text2:#b4b4b4;--text3:#8e8e8e;
-  --accent:#10a37f;--accent-h:#0d8f6f;--accent-pale:rgba(16,163,127,0.15);--accent-b:rgba(16,163,127,0.3);
-  --danger:#ef4444;--danger-pale:rgba(239,68,68,0.1);
-  --r:12px;--r2:8px;
-  --sh:0 2px 8px rgba(0,0,0,0.4);--sh2:0 8px 32px rgba(0,0,0,0.5);
-  --sw:260px;--font:'DM Sans',-apple-system,sans-serif;
-}
-html{height:100%;height:100dvh}
-body{font-family:var(--font);color:var(--text);background:var(--bg);height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeSpace</title>
+  <style>
+    :root{
+      --bg:#212121;
+      --panel:#2b2b2b;
+      --panel-2:#2f2f2f;
+      --text:#ececec;
+      --muted:#8e8e8e;
+      --border2:rgba(255,255,255,.08);
+      --accent:#10a37f;
+      --font:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    }
 
-/* AUTH */
-#auth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
-.abox{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem;box-shadow:var(--sh2)}
-.alogo{display:flex;align-items:center;gap:.65rem;justify-content:center;margin-bottom:2rem}
-.alogo-i{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1rem}
-.alogo-n{font-size:1.25rem;font-weight:600;letter-spacing:-.02em}
-.atitle{font-size:1.4rem;font-weight:600;text-align:center;margin-bottom:.3rem;letter-spacing:-.02em}
-.asub{font-size:.85rem;color:var(--text3);text-align:center;margin-bottom:2rem}
-.atabs{display:flex;background:var(--bg3);border-radius:var(--r2);padding:3px;margin-bottom:1.5rem;gap:3px}
-.atab{flex:1;padding:.5rem;border:none;border-radius:6px;background:none;color:var(--text3);font-family:var(--font);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .2s}
-.atab.on{background:var(--surface2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.afield{margin-bottom:1rem}
-.afield label{display:block;font-size:.77rem;font-weight:500;color:var(--text2);margin-bottom:.4rem}
-.afield input{width:100%;padding:.68rem .9rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:.88rem;outline:none;transition:border-color .2s,box-shadow .2s}
-.afield input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-pale)}
-.afield input::placeholder{color:var(--text3)}
-.abtn{width:100%;padding:.72rem;margin-top:.5rem;background:var(--accent);border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:.9rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s;letter-spacing:-.01em}
-.abtn:hover{background:var(--accent-h)}.abtn:active{transform:scale(.99)}.abtn:disabled{opacity:.5;cursor:not-allowed}
-.aerr{background:var(--danger-pale);border:1px solid rgba(239,68,68,.2);border-radius:var(--r2);padding:.6rem .9rem;font-size:.82rem;color:#fca5a5;margin-bottom:1rem;display:none}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      font-family:var(--font);
+      background:var(--bg);
+      color:var(--text);
+      overflow:hidden;
+    }
 
-/* APP */
-#app{display:none;height:100vh;height:100dvh;width:100%;overflow:hidden}
-#app.on{display:flex}
-.layout{display:flex;height:100%;width:100%;overflow:hidden}
+    #app{height:100vh;background:var(--bg)}
+    .layout{display:flex;height:100%}
 
-/* SIDEBAR */
-.sb{width:var(--sw);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;height:100%;overflow:hidden}
-.sb-top{padding:1rem .75rem .5rem;flex-shrink:0}
-.sb-brand{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;margin-bottom:.5rem}
-.sb-brand-i{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
-.sb-brand-n{font-size:.95rem;font-weight:600;letter-spacing:-.02em}
-.nchat-btn{display:flex;align-items:center;gap:.6rem;width:100%;padding:.58rem .75rem;background:none;border:1px solid var(--border);border-radius:var(--r2);color:var(--text2);font-family:var(--font);font-size:.84rem;cursor:pointer;transition:all .2s;text-align:left}
-.nchat-btn:hover{background:var(--surface);color:var(--text);border-color:var(--accent-b)}
-.sb-nav{padding:.5rem .75rem;flex-shrink:0}
-.slbl{font-size:.67rem;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:.35rem .6rem;margin-top:.25rem}
-.ni{display:flex;align-items:center;gap:.6rem;width:100%;padding:.48rem .6rem;background:none;border:none;border-radius:var(--r2);color:var(--text2);font-family:var(--font);font-size:.84rem;cursor:pointer;transition:all .15s;text-align:left}
-.ni:hover{background:rgba(255,255,255,.06);color:var(--text)}.ni.on{background:rgba(255,255,255,.08);color:var(--text)}
-.ni svg{width:16px;height:16px;flex-shrink:0;opacity:.6}.ni.on svg{opacity:1}
-.sb-sess{flex:1;overflow-y:auto;padding:.25rem .75rem .75rem}
-.slbl2{font-size:.67rem;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:.35rem .6rem .2rem}
-.sitem{padding:.42rem .6rem;border-radius:var(--r2);cursor:pointer;transition:background .15s;border:1px solid transparent;margin-bottom:1px}
-.sitem:hover{background:rgba(255,255,255,.06)}.sitem.on{background:rgba(255,255,255,.08);border-color:var(--border2)}
-.stitle{font-size:.81rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sitem.on .stitle{color:var(--text)}
-.smeta{font-size:.69rem;color:var(--text3);margin-top:.1rem}
-.sb-foot{padding:.75rem;border-top:1px solid var(--border2);flex-shrink:0}
-.urow{display:flex;align-items:center;gap:.6rem;padding:.48rem .6rem;border-radius:var(--r2);cursor:pointer;transition:background .15s}
-.urow:hover{background:rgba(255,255,255,.06)}
-.uav{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;flex-shrink:0}
-.unm{font-size:.84rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lout{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.75rem;padding:.2rem;transition:color .2s;flex-shrink:0}
-.lout:hover{color:var(--danger)}
+    .sb{
+      width:280px;
+      background:var(--panel);
+      border-right:1px solid var(--border2);
+      display:flex;
+      flex-direction:column;
+      transition:.25s ease;
+    }
 
-/* MAIN */
-.main{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;min-width:0;min-height:0}
-.hdr{padding:.8rem 1.25rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.75rem;flex-shrink:0;background:var(--bg)}
-.hdr-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--accent-pale);flex-shrink:0}
-.hdr-title{font-size:.93rem;font-weight:500;flex:1;letter-spacing:-.01em}
-.hdr-right{font-size:.77rem;color:var(--text3)}
-.mob-menu{display:none;background:none;border:none;color:var(--text2);cursor:pointer;padding:.2rem;flex-shrink:0}
+    .sb-top{padding:1rem;border-bottom:1px solid var(--border2)}
+    .nchat-btn{
+      width:100%;
+      background:var(--panel-2);
+      color:var(--text);
+      border:1px solid var(--border2);
+      border-radius:10px;
+      padding:.85rem 1rem;
+      text-align:left;
+      cursor:pointer;
+      font-size:.95rem;
+    }
 
-/* PAGES */
-.pg{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
-.pg.on{display:flex}
+    .sb-nav,.sb-list,.sb-bottom{padding:.75rem}
+    .ni,.sitem,.urow{
+      display:flex;
+      align-items:center;
+      gap:.75rem;
+      width:100%;
+      padding:.8rem .9rem;
+      border-radius:10px;
+      color:var(--text);
+      background:transparent;
+      border:none;
+      text-align:left;
+      cursor:pointer;
+      font-size:.94rem;
+    }
 
-/* CHAT */
-.msgs{flex:1;overflow-y:auto;padding:1.5rem 0;display:flex;flex-direction:column}
-.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem;text-align:center}
-.wic{width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1.2rem}
-.wtitle{font-size:1.65rem;font-weight:600;margin-bottom:.45rem;letter-spacing:-.03em}
-.wsub{font-size:.9rem;color:var(--text3);line-height:1.65;max-width:340px}
-.mwrap{width:100%;max-width:760px;margin:0 auto;padding:.45rem 1.5rem}
-.mrow{display:flex;gap:.75rem;align-items:flex-start}
-.mrow.usr{flex-direction:row-reverse}
-.mav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:600;flex-shrink:0;margin-top:3px}
-.mav.ai{background:var(--accent);color:#fff}.mav.usr{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
-.mcont{flex:1;min-width:0}
-.mname{font-size:.73rem;color:var(--text3);margin-bottom:.28rem;font-weight:500}
-.mrow.usr .mname{text-align:right}
-.mbub{font-size:.9rem;line-height:1.7;color:var(--text)}
-.mrow.usr .mbub{background:var(--surface);border:1px solid var(--border);border-radius:18px 4px 18px 18px;padding:.62rem .95rem;display:inline-block;float:right;clear:both;text-align:left;max-width:85%}
-.mrow.ai .mbub{padding:.2rem 0}
-.mtime{font-size:.67rem;color:var(--text3);margin-top:.28rem}
-.mrow.usr .mtime{text-align:right}
-.trow{display:flex;gap:.75rem;align-items:center;padding:.45rem 1.5rem;max-width:760px;margin:0 auto;width:100%}
-.tdots{display:flex;gap:4px;padding:.4rem 0}
-.tdots span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:td 1.4s infinite}
-.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
-@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
-.ebar{background:var(--danger-pale);border-top:1px solid rgba(239,68,68,.2);padding:.6rem 1.5rem;font-size:.81rem;color:#fca5a5;display:none;flex-shrink:0}
-.vbar{background:rgba(255,255,255,.03);border-top:1px solid var(--border2);padding:.55rem 1.5rem;font-size:.81rem;color:var(--text3);display:none;flex-shrink:0;align-items:center;justify-content:space-between}
-.vbar-btn{padding:.32rem .8rem;background:var(--accent);color:#fff;border:none;border-radius:6px;font-family:var(--font);font-size:.77rem;font-weight:500;cursor:pointer}
-.vbar-btn:hover{background:var(--accent-h)}
-.iarea{padding:.75rem 1.5rem 1rem;flex-shrink:0;background:var(--bg)}
-.ibox{max-width:760px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;position:relative;transition:border-color .2s,box-shadow .2s}
-.ibox:focus-within{border-color:rgba(255,255,255,.2);box-shadow:0 0 0 1px rgba(255,255,255,.07)}
-.cinput{width:100%;padding:.82rem 3.5rem .82rem 1rem;background:none;border:none;color:var(--text);font-family:var(--font);font-size:.9rem;resize:none;outline:none;min-height:50px;max-height:200px;line-height:1.55}
-.cinput::placeholder{color:var(--text3)}
-.sbtn{position:absolute;right:.5rem;bottom:.5rem;width:33px;height:33px;border-radius:8px;background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s}
-.sbtn:hover{background:var(--accent-h)}.sbtn:active{transform:scale(.93)}.sbtn:disabled{background:var(--bg3);cursor:not-allowed}
-.sbtn svg{width:15px;height:15px}
-.ifooter{text-align:center;font-size:.69rem;color:var(--text3);margin-top:.45rem;max-width:760px;margin-left:auto;margin-right:auto}
+    .ni:hover,.sitem:hover,.urow:hover{background:rgba(255,255,255,.07)}
+    .sb-list{flex:1;overflow:auto}
+    .slabel{font-size:.78rem;color:var(--muted);padding:.25rem .9rem .5rem}
 
-/* SCROLL PAGES */
-.spg{flex:1;overflow-y:auto;padding:1.5rem}
-.spin{max-width:760px;margin:0 auto}
-.ptitle{font-size:1.4rem;font-weight:600;margin-bottom:1.25rem;letter-spacing:-.03em}
+    .main{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+      background:var(--bg);
+    }
 
-/* HISTORY */
-.hitem{display:flex;gap:.75rem;padding:.9rem 0;border-bottom:1px solid var(--border2)}
-.hitem:last-child{border-bottom:none}
-.hav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:600;flex-shrink:0;margin-top:2px}
-.hav.ai{background:var(--accent);color:#fff}.hav.usr{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
-.hbody{flex:1}
-.hrole{font-size:.71rem;color:var(--text3);font-weight:600;text-transform:capitalize;margin-bottom:.28rem}
-.htxt{font-size:.87rem;color:var(--text2);line-height:1.65}
-.htime{font-size:.67rem;color:var(--text3);margin-top:.28rem}
-.empty{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:.88rem}
-.empty-i{font-size:2.25rem;margin-bottom:.65rem;opacity:.4}
+    .hdr{
+      padding:.75rem 1rem;
+      border-bottom:1px solid var(--border2);
+      display:flex;
+      align-items:center;
+      gap:.75rem;
+      flex-shrink:0;
+      background:#212121;
+    }
 
-/* MOOD */
-.mgrid{display:flex;gap:.55rem;margin-bottom:1.2rem;flex-wrap:wrap}
-.mbtn{flex:1;min-width:68px;padding:.82rem .45rem;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font)}
-.mbtn:hover{border-color:rgba(255,255,255,.2);background:var(--surface2);transform:translateY(-1px)}
-.mbtn.sel{border-color:var(--accent);background:var(--accent-pale)}
-.moji{font-size:1.7rem;display:block;margin-bottom:.28rem}
-.mlbl{font-size:.74rem;color:var(--text2);font-weight:500}.mbtn.sel .mlbl{color:var(--accent)}
-.mnote{width:100%;padding:.72rem 1rem;margin-bottom:1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:.87rem;resize:none;outline:none;height:78px;transition:border-color .2s}
-.mnote:focus{border-color:var(--accent-b)}.mnote::placeholder{color:var(--text3)}
-.savebtn{padding:.62rem 1.4rem;background:var(--accent);color:#fff;border:none;border-radius:var(--r2);font-family:var(--font);font-size:.87rem;font-weight:600;cursor:pointer;transition:background .2s;margin-bottom:2rem}
-.savebtn:hover{background:var(--accent-h)}.savebtn:disabled{opacity:.5;cursor:not-allowed}
-.slbl3{font-size:.74rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.72rem}
-.ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:1.2rem}
-.mlog{display:flex;align-items:center;gap:.72rem;padding:.72rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:.45rem}
-.mlog-e{font-size:1.45rem;flex-shrink:0}
-.mlog-i{flex:1}.mlog-n{font-size:.87rem;font-weight:500}.mlog-m{font-size:.71rem;color:var(--text3);margin-top:.12rem}
-.mlog-b{background:var(--accent-pale);color:var(--accent);border:1px solid var(--accent-b);border-radius:20px;padding:.14rem .58rem;font-size:.71rem;font-weight:600}
+    .mob-menu{
+      display:none;
+      background:none;
+      border:none;
+      color:#b4b4b4;
+      cursor:pointer;
+      padding:.2rem;
+      font-size:1.2rem;
+    }
 
-/* EXERCISES */
-.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:.82rem}
-.ecard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.ecard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:.5}
-.ecard:hover{border-color:rgba(255,255,255,.18);background:var(--surface2);transform:translateY(-2px);box-shadow:var(--sh2)}
-.ecard:hover::before{opacity:1}
-.eemoji{font-size:1.7rem;margin-bottom:.72rem}
-.ename{font-size:.97rem;font-weight:600;margin-bottom:.38rem;letter-spacing:-.02em}
-.edesc{font-size:.81rem;color:var(--text3);line-height:1.6;margin-bottom:.82rem}
-.etags{display:flex;gap:.33rem;flex-wrap:wrap}
-.etag{font-size:.67rem;background:rgba(255,255,255,.07);color:var(--text3);border-radius:20px;padding:.14rem .52rem}
-.edur{font-size:.71rem;color:var(--text3);margin-top:.48rem}
+    .hdr-title{
+      font-size:1rem;
+      font-weight:600;
+      color:#ececec;
+    }
 
-/* MODAL */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}
-.ov.on{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.75rem;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative;box-shadow:var(--sh2)}
-.mcls{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem;padding:.2rem;transition:color .2s}
-.mcls:hover{color:var(--text)}
-.memo{font-size:1.9rem;margin-bottom:.55rem}
-.mtitle{font-size:1.2rem;font-weight:600;margin-bottom:.28rem;letter-spacing:-.02em}
-.mdesc{font-size:.84rem;color:var(--text3);margin-bottom:1.2rem;line-height:1.6}
-.steps{display:flex;flex-direction:column;gap:.82rem;margin-bottom:1.4rem}
-.step{display:flex;gap:.72rem}
-.snum{width:25px;height:25px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.73rem;font-weight:600;flex-shrink:0;margin-top:2px}
-.sbody{flex:1}
-.stitle2{font-size:.87rem;font-weight:600;margin-bottom:.18rem}
-.stext{font-size:.81rem;color:var(--text3);line-height:1.6}
-.mbtns{display:flex;gap:.55rem}
-.mbtn2{padding:.58rem 1.2rem;border-radius:var(--r2);font-family:var(--font);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .2s}
-.mbtn2.p{background:var(--accent);color:#fff;border:none}.mbtn2.p:hover{background:var(--accent-h)}
-.mbtn2.s{background:none;color:var(--text2);border:1px solid var(--border)}.mbtn2.s:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
-.bwrap{text-align:center;padding:1.1rem 0;margin-bottom:.9rem}
-.bcirc{width:105px;height:105px;border-radius:50%;border:2px solid rgba(16,163,127,.4);background:rgba(16,163,127,.1);display:flex;align-items:center;justify-content:center;font-size:.84rem;font-weight:500;color:var(--accent);margin:0 auto .7rem;transition:all .65s ease}
-.bcnt{font-size:1.9rem;font-weight:600;height:2.4rem;margin-bottom:.22rem}
-.blbl{font-size:.84rem;color:var(--text3);height:1.2rem;margin-bottom:.8rem}
-.twrap{text-align:center;padding:.7rem 0;margin-bottom:.9rem}
-.tsvg{width:115px;height:115px;display:block;margin:0 auto .7rem}
-.tbg{fill:none;stroke:var(--bg3);stroke-width:6}
-.tprog{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .1s}
-.ttxt{font-size:1.55rem;font-weight:600;fill:var(--text);dominant-baseline:middle;text-anchor:middle}
+    .hdr-right{margin-left:auto;color:var(--muted);font-size:.9rem}
+    .msgs{flex:1;overflow:auto;padding:.5rem 0;background:var(--bg)}
+    .mwrap{padding:.5rem 1rem}
 
-/* TOAST */
-.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.58rem 1.2rem;border-radius:20px;font-size:.81rem;box-shadow:var(--sh);opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
-.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+    .welcome{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      flex:1;
+      padding:2rem 1rem;
+      text-align:center;
+      background:#212121;
+      min-height:100%;
+    }
 
-/* MOBILE */
-.mobbar{display:none}
-.mobfab{display:none}
-.sbov{display:none}
-@media(max-width:768px){
-  html,body{height:100dvh;overflow:hidden}
-  #app{height:100dvh;overflow:hidden}
-  .layout{height:100%;flex-direction:column;overflow:hidden}
-  /* Hide sidebar completely on mobile */
-  .sb{display:none !important}
-  .mob-menu{display:flex !important}
-  /* Sidebar when opened via hamburger */
-  .sb.mopen{
-    display:flex !important;
-    position:fixed;top:0;left:0;bottom:0;
-    width:75%;max-width:280px;
-    z-index:100;
-    box-shadow:var(--sh2);
-    overflow-y:auto;
-  }
-  /* Overlay when sidebar open */
-  .sbov{
-    display:none;
-    position:fixed;inset:0;
-    background:rgba(0,0,0,.6);
-    z-index:99;
-  }
-  .sbov.on{display:block}
-  /* Main takes full width */
-  .main{
-    flex:1;width:100%;
-    display:flex;flex-direction:column;
-    overflow:hidden;min-height:0;
-  }
-  /* Header */
-  .hdr{padding:.6rem .9rem;flex-shrink:0}
-  .hdr-title{font-size:.85rem}
-  .hdr-right{display:none}
-  /* Chat messages */
-  .msgs{padding:.5rem 0;flex:1;overflow-y:auto}
-  .mwrap{padding:.35rem .85rem}
-  /* Input */
-  .iarea{padding:.45rem .75rem .6rem;flex-shrink:0}
-  /* Scroll pages */
-  .spg{padding:.85rem;flex:1;overflow-y:auto}
-  /* Exercises */
-  .egrid{grid-template-columns:1fr}
-  /* Welcome screen */
-  .welcome{padding:1.25rem .85rem}
-  .wtitle{font-size:1.3rem}
-  .wsub{font-size:.85rem}
-  /* Pages must be flex column */
-  .pg{height:100%}
-  .pg.on{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
-  /* Bottom nav */
-  .mobbar{
-    display:flex !important;
-    background:var(--bg2);
-    border-top:1px solid var(--border2);
-    flex-shrink:0;
-    padding-bottom:env(safe-area-inset-bottom,0);
-    width:100%;
-  }
-  .mobbtn{
-    flex:1;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    padding:.5rem .15rem;
-    background:none;border:none;
-    color:var(--text3);font-family:var(--font);
-    font-size:.55rem;cursor:pointer;
-    transition:color .15s;gap:.15rem;
-  }
-  .mobbtn svg{width:18px;height:18px}
-  .mobbtn.on{color:var(--accent)}
-  /* Floating new chat button */
-  .mobfab{
-    display:flex !important;
-    position:fixed;
-    bottom:calc(52px + env(safe-area-inset-bottom,0) + 12px);
-    right:.9rem;
-    width:40px;height:40px;
-    border-radius:50%;
-    background:var(--accent);color:#fff;
-    border:none;
-    align-items:center;justify-content:center;
-    cursor:pointer;
-    box-shadow:0 4px 18px rgba(16,163,127,.45);
-    z-index:50;
-    transition:transform .15s;
-  }
-  .mobfab:active{transform:scale(.9)}
-  .mobfab svg{width:17px;height:17px}
-  .mobfab.hide{display:none !important}
-}
-</style>
+    .wic{display:none}
+    .wtitle{
+      font-size:2rem;
+      font-weight:500;
+      color:#ececec;
+      letter-spacing:-0.03em;
+      margin-bottom:.4rem;
+    }
+
+    .wsub{
+      font-size:.9rem;
+      color:#8e8e8e;
+      max-width:320px;
+      line-height:1.6;
+      min-height:1.4em;
+    }
+
+    .iarea{
+      padding:.65rem .8rem 1rem;
+      flex-shrink:0;
+      background:#212121;
+      border-top:1px solid rgba(255,255,255,.03);
+    }
+
+    .ibox{
+      max-width:760px;
+      margin:0 auto;
+      background:#2f2f2f;
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:28px;
+      position:relative;
+      min-height:56px;
+      display:flex;
+      align-items:center;
+    }
+
+    .cinput{
+      width:100%;
+      padding:.95rem 4rem .95rem 1rem;
+      background:none;
+      border:none;
+      color:#ececec;
+      font-family:var(--font);
+      font-size:.95rem;
+      resize:none;
+      outline:none;
+      min-height:56px;
+      max-height:160px;
+      line-height:1.4;
+    }
+
+    .cinput::placeholder{color:#8e8e8e}
+
+    .sbtn{
+      position:absolute;
+      right:.55rem;
+      bottom:.55rem;
+      width:38px;
+      height:38px;
+      border-radius:50%;
+      background:#10a37f;
+      border:none;
+      color:#fff;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1rem;
+    }
+
+    .pg{display:none}
+    .pg.on{display:block}
+    .spg{padding:1rem;color:var(--muted)}
+
+    .sbov{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.6);
+      z-index:99;
+    }
+
+    .sbov.on{display:block}
+
+    .mobbar{display:none !important}
+
+    .mobfab{
+      display:none;
+      position:fixed;
+      bottom:20px;
+      right:18px;
+      width:56px;
+      height:56px;
+      border-radius:50%;
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      box-shadow:0 8px 24px rgba(16,163,127,.35);
+      z-index:50;
+      font-size:1.35rem;
+    }
+
+    .mobfab.hide{display:none !important}
+
+    @media(max-width:768px){
+      html,body{
+        height:100dvh;
+        overflow:hidden;
+        background:#212121;
+      }
+
+      #app{
+        height:100dvh;
+        overflow:hidden;
+        background:#212121;
+      }
+
+      .layout{
+        height:100%;
+        flex-direction:column;
+        overflow:hidden;
+      }
+
+      .sb{
+        display:none !important;
+      }
+
+      .sb.mopen{
+        display:flex !important;
+        position:fixed;
+        top:0;
+        left:0;
+        bottom:0;
+        width:78%;
+        max-width:300px;
+        background:#2f2f2f;
+        z-index:100;
+        box-shadow:0 10px 30px rgba(0,0,0,.45);
+      }
+
+      .main{
+        flex:1;
+        width:100%;
+        display:flex;
+        flex-direction:column;
+        overflow:hidden;
+        min-height:0;
+        background:#212121;
+      }
+
+      .hdr{
+        padding:.75rem 1rem;
+        background:#212121;
+        border-bottom:1px solid rgba(255,255,255,0.06);
+      }
+
+      .mob-menu{display:flex !important}
+      .hdr-right{display:none}
+
+      .msgs{
+        padding:.2rem 0;
+        flex:1;
+        overflow-y:auto;
+        background:#212121;
+      }
+
+      .mwrap{padding:.35rem .85rem}
+
+      .welcome{
+        flex:1;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+        padding:2rem 1rem;
+        background:#212121;
+      }
+
+      .wtitle{
+        font-size:2rem;
+        font-weight:500;
+        color:#ececec;
+      }
+
+      .wsub{
+        color:#8e8e8e;
+        font-size:.9rem;
+      }
+
+      .iarea{
+        padding:.7rem .8rem 1rem;
+        background:#212121;
+      }
+
+      .ibox{
+        background:#2f2f2f;
+        border:1px solid rgba(255,255,255,0.08);
+        border-radius:28px;
+        min-height:56px;
+      }
+
+      .cinput{
+        min-height:56px;
+        padding:.95rem 4rem .95rem 1rem;
+        font-size:.95rem;
+      }
+
+      .sbtn{
+        width:38px;
+        height:38px;
+        border-radius:50%;
+        right:.55rem;
+        bottom:.55rem;
+      }
+
+      .spg{
+        padding:.85rem;
+        flex:1;
+        overflow-y:auto;
+        background:#212121;
+      }
+
+      .pg{height:100%}
+
+      .pg.on{
+        display:flex;
+        flex-direction:column;
+        flex:1;
+        overflow:hidden;
+        min-height:0;
+      }
+
+      .mobbar{display:none !important}
+
+      .mobfab{
+        display:flex !important;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<!-- AUTH -->
-<div id="auth">
-  <div class="abox">
-    <div class="alogo"><div class="alogo-i">🌿</div><div class="alogo-n">SafeSpace</div></div>
-    <div class="atitle">Welcome back</div>
-    <div class="asub">Your mental health companion</div>
-    <div class="atabs">
-      <button class="atab on" onclick="stab('login')">Sign in</button>
-      <button class="atab" onclick="stab('register')">Create account</button>
-    </div>
-    <div id="aerr" class="aerr"></div>
-    <div id="lf">
-      <div class="afield"><label>Username</label><input id="lu" type="text" placeholder="Your username" autocomplete="username"/></div>
-      <div class="afield"><label>Password</label><input id="lp" type="password" placeholder="Your password" autocomplete="current-password"/></div>
-      <button class="abtn" id="lbtn" onclick="doLogin()">Sign in</button>
-    </div>
-    <div id="rf" style="display:none">
-      <div class="afield"><label>Username</label><input id="ru" type="text" placeholder="Choose a username" autocomplete="username"/></div>
-      <div class="afield"><label>Email</label><input id="re" type="email" placeholder="you@example.com" autocomplete="email"/></div>
-      <div class="afield"><label>Password</label><input id="rp" type="password" placeholder="Min 6 characters" autocomplete="new-password"/></div>
-      <button class="abtn" id="rbtn" onclick="doReg()">Create account</button>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="app">
-<div class="layout">
-  <!-- Sidebar -->
-  <div class="sb" id="sb">
-    <div class="sb-top">
-      <div class="sb-brand"><div class="sb-brand-i">🌿</div><div class="sb-brand-n">SafeSpace</div></div>
-      <button class="nchat-btn" onclick="newChat()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 5v14M5 12h14"/></svg>
-        New chat
-      </button>
-    </div>
-    <div class="sb-nav">
-      <div class="slbl">Navigation</div>
-      <button class="ni on" id="ni-chat" onclick="goPage('chat');csb()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
-      </button>
-      <button class="ni" id="ni-history" onclick="goPage('history');csb()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>History
-      </button>
-      <button class="ni" id="ni-mood" onclick="goPage('mood');csb()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>Mood tracker
-      </button>
-      <button class="ni" id="ni-exercises" onclick="goPage('exercises');csb()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Exercises
-      </button>
-    </div>
-    <div class="sb-sess">
-      <div class="slbl2">Recent chats</div>
-      <div id="slist"><div class="empty" style="padding:.75rem;font-size:.77rem">No chats yet</div></div>
-    </div>
-    <div class="sb-foot">
-      <div class="urow" onclick="doLogout()">
-        <div class="uav" id="uav">?</div>
-        <div class="unm" id="unm">User</div>
-        <button class="lout" title="Sign out">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
-  <div class="sbov" id="sbov" onclick="csb()"></div>
-
-  <!-- Main -->
-  <div class="main">
-    <div class="hdr">
-      <button class="mob-menu" onclick="osb()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-      </button>
-      <div class="hdr-dot"></div>
-      <div class="hdr-title" id="htitle">SafeSpace AI · Mental Health Companion</div>
-      <div class="hdr-right" id="hright"></div>
-    </div>
-
-    <!-- Chat -->
-    <div class="pg on" id="pg-chat">
-      <div class="msgs" id="msgs">
-        <div class="welcome" id="welc">
-          <div class="wic">🌿</div>
-          <div class="wtitle">How can I help you?</div>
-          <div class="wsub">I'm your SafeSpace AI — here to listen, support, and help you feel better. Share what's on your mind.</div>
+  <div id="app">
+    <div class="sbov" id="overlay" onclick="toggleSidebar(false)"></div>
+    <div class="layout">
+      <aside class="sb" id="sidebar">
+        <div class="sb-top">
+          <button class="nchat-btn" onclick="showPage('chat')">+ New chat</button>
         </div>
-      </div>
-      <div class="ebar" id="ebar">🚨 Emergency alert triggered. Please call iCall: 9152987821 or emergency services immediately.</div>
-      <div class="vbar" id="vbar">
-        <span>Viewing past conversation</span>
-        <button class="vbar-btn" onclick="newChat()">New chat</button>
-      </div>
-      <div class="iarea" id="iarea">
-        <div class="ibox">
-          <textarea class="cinput" id="ci" placeholder="Message SafeSpace..." rows="1" onkeydown="onKey(event)" oninput="rsz(this)"></textarea>
-          <button class="sbtn" id="sbtn" onclick="send()">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          </button>
+
+        <div class="sb-nav">
+          <button class="ni" onclick="showPage('chat')">💬 Chat</button>
+          <button class="ni" onclick="showPage('history')">🕘 History</button>
+          <button class="ni" onclick="showPage('mood')">😊 Mood tracker</button>
+          <button class="ni" onclick="showPage('exercises')">🧘 Exercises</button>
         </div>
-        <div class="ifooter">SafeSpace AI can make mistakes. Not a substitute for professional care.</div>
-      </div>
-    </div>
 
-    <!-- History -->
-    <div class="pg" id="pg-history">
-      <div class="spg"><div class="spin">
-        <div class="ptitle">Chat history</div>
-        <div id="hlist"><div class="empty"><div class="empty-i">💬</div>No history yet. Start a conversation!</div></div>
-      </div></div>
-    </div>
-
-    <!-- Mood -->
-    <div class="pg" id="pg-mood">
-      <div class="spg"><div class="spin">
-        <div class="ptitle">Mood tracker</div>
-        <div class="slbl3">How are you feeling?</div>
-        <div class="mgrid">
-          <button class="mbtn" onclick="pm(this,'😄 Great',5)"><span class="moji">😄</span><span class="mlbl">Great</span></button>
-          <button class="mbtn" onclick="pm(this,'🙂 Good',4)"><span class="moji">🙂</span><span class="mlbl">Good</span></button>
-          <button class="mbtn" onclick="pm(this,'😐 Neutral',3)"><span class="moji">😐</span><span class="mlbl">Neutral</span></button>
-          <button class="mbtn" onclick="pm(this,'😔 Low',2)"><span class="moji">😔</span><span class="mlbl">Low</span></button>
-          <button class="mbtn" onclick="pm(this,'😢 Very low',1)"><span class="moji">😢</span><span class="mlbl">Very low</span></button>
+        <div class="sb-list">
+          <div class="slabel">Recent</div>
+          <button class="sitem">Anxiety support</button>
+          <button class="sitem">Sleep tips</button>
+          <button class="sitem">Breathing routine</button>
         </div>
-        <textarea class="mnote" id="mnote" placeholder="Add a note — what's making you feel this way? (optional)"></textarea>
-        <button class="savebtn" id="msavebtn" onclick="saveMood()">Save mood</button>
-        <div class="slbl3">Mood history</div>
-        <div class="ccard" id="ccard" style="display:none"><canvas id="mc" height="70"></canvas></div>
-        <div id="mlogs"><div class="empty"><div class="empty-i">😊</div>No mood logs yet.</div></div>
-      </div></div>
+
+        <div class="sb-bottom">
+          <button class="urow">👤 Profile</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="hdr">
+          <button class="mob-menu" onclick="toggleSidebar(true)">☰</button>
+          <div class="hdr-title" id="htitle">SafeSpace</div>
+          <div class="hdr-right">Mental Health Companion</div>
+        </header>
+
+        <section class="pg on" id="page-chat">
+          <div class="msgs">
+            <div class="welcome">
+              <div class="wic"></div>
+              <div class="wtitle">Ready when you are.</div>
+              <div class="wsub"></div>
+            </div>
+          </div>
+
+          <div class="iarea">
+            <div class="ibox">
+              <textarea class="cinput" placeholder="Message SafeSpace..." rows="1"></textarea>
+              <button class="sbtn">➤</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="pg" id="page-history">
+          <div class="spg">Your previous chats will appear here.</div>
+        </section>
+
+        <section class="pg" id="page-mood">
+          <div class="spg">Track your mood and daily reflections here.</div>
+        </section>
+
+        <section class="pg" id="page-exercises">
+          <div class="spg">Breathing, grounding, and mindfulness exercises appear here.</div>
+        </section>
+      </main>
     </div>
 
-    <!-- Exercises -->
-    <div class="pg" id="pg-exercises">
-      <div class="spg"><div class="spin">
-        <div class="ptitle">Anxiety relief exercises</div>
-        <div class="egrid" id="egrid"></div>
-      </div></div>
-    </div>
+    <button class="mobfab" id="fab" onclick="showPage('chat')">＋</button>
   </div>
-</div>
 
-<!-- Mobile nav -->
-<nav class="mobbar">
-  <button class="mobbtn on" id="mb-chat" onclick="goPage('chat');mact('chat')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
-  </button>
-  <button class="mobbtn" id="mb-history" onclick="goPage('history');mact('history')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>History
-  </button>
-  <button class="mobbtn" id="mb-mood" onclick="goPage('mood');mact('mood')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>Mood
-  </button>
-  <button class="mobbtn" id="mb-exercises" onclick="goPage('exercises');mact('exercises')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Exercises
-  </button>
-  <button class="mobbtn" onclick="doLogout()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Logout
-  </button>
-</nav>
-<button class="mobfab" id="mfab" onclick="newChat()">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-</button>
-</div>
+  <script>
+    const TITLES = {
+      chat: 'SafeSpace',
+      history: 'History',
+      mood: 'Mood tracker',
+      exercises: 'Exercises'
+    };
 
-<!-- Modal -->
-<div class="ov" id="ov" onclick="clov(event)"><div class="modal"><button class="mcls" onclick="clmod()">✕</button><div id="mbody"></div></div></div>
-<div class="toast" id="toast"></div>
+    function showPage(page){
+      document.querySelectorAll('.pg').forEach(el => el.classList.remove('on'));
+      document.getElementById(`page-${page}`).classList.add('on');
+      document.getElementById('htitle').textContent = TITLES[page] || 'SafeSpace';
 
-<script>
-const API='https://mental-health-bot-d56n.onrender.com';
-let token=localStorage.getItem('ss_token'),me=JSON.parse(localStorage.getItem('ss_user')||'null');
-let sid=null,viewing=false,selM=null,selS=0,mChart=null,bInt=null,tInt=null;
+      const fab = document.getElementById('fab');
+      if(page === 'chat') fab.classList.remove('hide');
+      else fab.classList.add('hide');
 
-window.onerror=(m,s,l)=>{console.error(m,s,l);return true};
-window.addEventListener('unhandledrejection',e=>{console.error(e.reason);e.preventDefault()});
+      toggleSidebar(false);
+    }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  renderEx();
-  if(token&&me){showApp();init()}
-});
+    function toggleSidebar(open){
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('overlay');
+      if(window.innerWidth <= 768){
+        if(open){
+          sb.classList.add('mopen');
+          ov.classList.add('on');
+        }else{
+          sb.classList.remove('mopen');
+          ov.classList.remove('on');
+        }
+      }
+    }
 
-// AUTH
-function stab(t){
-  document.querySelectorAll('.atab').forEach((b,i)=>b.classList.toggle('on',(i===0&&t==='login')||(i===1&&t==='register')));
-  document.getElementById('lf').style.display=t==='login'?'':'none';
-  document.getElementById('rf').style.display=t==='register'?'':'none';
-  document.getElementById('aerr').style.display='none';
-}
-function serr(m){const e=document.getElementById('aerr');e.textContent=m;e.style.display='block'}
-
-async function doLogin(){
-  const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value;
-  if(!u||!p){serr('Please fill in all fields.');return}
-  const b=document.getElementById('lbtn');b.disabled=true;b.textContent='Signing in…';
-  try{
-    const r=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
-    const d=await r.json();if(!r.ok){serr(d.detail||'Login failed.');return}
-    save(d.token,d.user);showApp();init();
-  }catch{serr('Cannot connect. Please try again.')}
-  finally{b.disabled=false;b.textContent='Sign in'}
-}
-async function doReg(){
-  const u=document.getElementById('ru').value.trim(),e=document.getElementById('re').value.trim(),p=document.getElementById('rp').value;
-  if(!u||!e||!p){serr('Please fill in all fields.');return}
-  if(p.length<6){serr('Password must be at least 6 characters.');return}
-  const b=document.getElementById('rbtn');b.disabled=true;b.textContent='Creating…';
-  try{
-    const r=await fetch(`${API}/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,email:e,password:p})});
-    const d=await r.json();if(!r.ok){serr(d.detail||'Registration failed.');return}
-    save(d.token,d.user);showApp();init();
-  }catch{serr('Cannot connect. Please try again.')}
-  finally{b.disabled=false;b.textContent='Create account'}
-}
-function save(t,u){token=t;me=u;localStorage.setItem('ss_token',t);localStorage.setItem('ss_user',JSON.stringify(u))}
-function doLogout(){localStorage.clear();token=null;me=null;sid=null;document.getElementById('app').classList.remove('on');document.getElementById('auth').style.display='flex';resetChat()}
-
-// APP
-function showApp(){
-  document.getElementById('auth').style.display='none';
-  document.getElementById('app').classList.add('on');
-  const n=me?.username||'User';
-  document.getElementById('uav').textContent=n[0].toUpperCase();
-  document.getElementById('unm').textContent=n;
-  document.getElementById('hright').textContent=n;
-  document.getElementById('mfab').classList.remove('hide');
-}
-async function init(){await loadSess();newChat()}
-
-// NAV
-const TITLES={chat:'SafeSpace AI · Mental Health Companion',history:'Chat history',mood:'Mood tracker',exercises:'Anxiety relief exercises'};
-function goPage(p){
-  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
-  document.getElementById(`pg-${p}`).classList.add('on');
-  document.getElementById(`ni-${p}`)?.classList.add('on');
-  document.getElementById('htitle').textContent=TITLES[p]||'SafeSpace';
-  if(p==='history')loadHist();
-  if(p==='mood')loadMoodH();
-  const fab=document.getElementById('mfab');
-  fab.classList.toggle('hide',p!=='chat');
-}
-function mact(p){
-  document.querySelectorAll('.mobbtn').forEach(b=>b.classList.remove('on'));
-  document.getElementById(`mb-${p}`)?.classList.add('on');
-}
-function osb(){document.getElementById('sb').classList.add('mopen');document.getElementById('sbov').classList.add('on')}
-function csb(){document.getElementById('sb').classList.remove('mopen');document.getElementById('sbov').classList.remove('on')}
-
-// SESSIONS
-async function loadSess(){
-  try{
-    const r=await fetch(`${API}/sessions`,{headers:{Authorization:`Bearer ${token}`}});
-    if(!r.ok)return;const d=await r.json();renderSess(d.sessions||[],sid);
-  }catch{}
-}
-function renderSess(list,aid){
-  const el=document.getElementById('slist');
-  if(!list.length){el.innerHTML='<div class="empty" style="padding:.75rem;font-size:.77rem">No chats yet</div>';return}
-  el.innerHTML=list.map(s=>`
-    <div class="sitem ${s.id===aid?'on':''}" onclick="loadSess2('${s.id}','${esc(s.title)}')">
-      <div class="stitle">${esc(s.title)}</div>
-      <div class="smeta">${ago(s.last_message||s.created_at)} · ${s.message_count||0} msgs</div>
-    </div>`).join('');
-}
-function ago(ts){
-  if(!ts)return'Now';const d=Date.now()-new Date(ts).getTime(),m=Math.floor(d/60000);
-  if(m<1)return'Just now';if(m<60)return`${m}m ago`;
-  const h=Math.floor(m/60);if(h<24)return`${h}h ago`;
-  return new Date(ts).toLocaleDateString('en',{month:'short',day:'numeric'});
-}
-async function getSess(){try{const r=await fetch(`${API}/sessions`,{headers:{Authorization:`Bearer ${token}`}});return(await r.json()).sessions||[]}catch{return[]}}
-
-function newChat(){
-  sid=null;viewing=false;resetChat();goPage('chat');setIn(true);
-  document.querySelectorAll('.sitem').forEach(e=>e.classList.remove('on'));
-}
-function resetChat(){
-  document.getElementById('msgs').innerHTML=`<div class="welcome" id="welc"><div class="wic">🌿</div><div class="wtitle">How can I help you?</div><div class="wsub">I'm your SafeSpace AI — here to listen, support, and help you feel better.</div></div>`;
-}
-function setIn(show){
-  document.getElementById('iarea').style.display=show?'':'none';
-  const vb=document.getElementById('vbar');vb.style.display=show?'none':'flex';
-  viewing=!show;
-}
-async function loadSess2(id,title){
-  sid=id;viewing=true;goPage('chat');setIn(false);
-  document.getElementById('htitle').textContent=title||'Past chat';
-  try{
-    const r=await fetch(`${API}/sessions/${id}/messages`,{headers:{Authorization:`Bearer ${token}`}});
-    if(!r.ok)return;const d=await r.json();
-    const el=document.getElementById('msgs');el.innerHTML='';
-    if(!d.messages?.length){el.innerHTML='<div class="empty">Empty conversation</div>';return}
-    d.messages.forEach(m=>addMsg(m.role,m.message,m.timestamp,m.tool_called,true));
-    el.scrollTop=el.scrollHeight;
-    getSess().then(s=>renderSess(s,id));
-  }catch{}
-  csb();
-}
-
-// CHAT
-function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
-function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,200)+'px'}
-
-async function send(){
-  if(viewing)return;
-  const inp=document.getElementById('ci');const msg=inp.value.trim();if(!msg)return;
-  const w=document.getElementById('welc');if(w)w.remove();
-  inp.value='';inp.style.height='auto';
-  document.getElementById('sbtn').disabled=true;
-  addMsg('user',msg);
-  const tEl=addTyping();
-  try{
-    const body={message:msg};if(sid)body.session_id=sid;
-    const r=await fetch(`${API}/ask`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body)});
-    tEl.remove();
-    if(r.status===401){doLogout();return}
-    const d=await r.json();
-    if(!sid&&d.session_id)sid=d.session_id;
-    addMsg('ai',d.response,null,d.tool_called);
-    if(d.tool_called==='emergency_call_tool'){const eb=document.getElementById('ebar');eb.style.display='block';setTimeout(()=>eb.style.display='none',10000)}
-    getSess().then(s=>renderSess(s,sid));
-  }catch{tEl.remove();addMsg('ai','I\'m having a brief issue. Please try again in a moment. 💙')}
-  finally{document.getElementById('sbtn').disabled=false;document.getElementById('ci').focus()}
-}
-function addMsg(role,text,ts,tool,noA=false){
-  const el=document.getElementById('msgs');
-  const isu=role==='user';
-  const t=ts?new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const nm=isu?(me?.username||'You'):'SafeSpace AI';
-  let th='';
-  if(tool&&tool!=='None'){const em=tool.includes('emergency');th=`<span style="display:inline-flex;align-items:center;gap:.28rem;font-size:.69rem;padding:.13rem .52rem;border-radius:20px;margin-top:.28rem;background:${em?'rgba(239,68,68,.1)':'rgba(16,163,127,.1)'};color:${em?'#fca5a5':'#34d399'};border:1px solid ${em?'rgba(239,68,68,.2)':'rgba(16,163,127,.2)'}">${em?'🚨':'🔧'} ${tool.replace(/_/g,' ')}</span>`}
-  const w=document.createElement('div');w.className='mwrap';
-  if(noA)w.style.animation='none';
-  w.innerHTML=`<div class="mrow ${isu?'usr':'ai'}"><div class="mav ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="mcont"><div class="mname">${nm}</div><div class="mbub">${esc(text)}</div>${th}<div class="mtime">${t}</div></div></div>`;
-  el.appendChild(w);el.scrollTop=el.scrollHeight;return w;
-}
-function addTyping(){
-  const el=document.getElementById('msgs');
-  const w=document.createElement('div');w.className='trow';
-  w.innerHTML=`<div class="mav ai">🌿</div><div class="tdots"><span></span><span></span><span></span></div>`;
-  el.appendChild(w);el.scrollTop=el.scrollHeight;return w;
-}
-
-// HISTORY
-async function loadHist(){
-  try{
-    const r=await fetch(`${API}/history`,{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)return;
-    const d=await r.json();const el=document.getElementById('hlist');
-    if(!d.history?.length){el.innerHTML='<div class="empty"><div class="empty-i">💬</div>No history yet.</div>';return}
-    el.innerHTML=d.history.map(m=>{
-      const isu=m.role==='user';
-      const ts=m.timestamp?new Date(m.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
-      return `<div class="hitem"><div class="hav ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="hbody"><div class="hrole">${isu?me?.username||'You':'SafeSpace AI'}</div><div class="htxt">${esc(m.message)}</div><div class="htime">${ts}</div></div></div>`;
-    }).join('');
-  }catch{}
-}
-
-// MOOD
-function pm(btn,mood,score){document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selM=mood;selS=score}
-async function saveMood(){
-  if(!selM){showT('Please select a mood first');return}
-  const note=document.getElementById('mnote').value.trim();
-  const b=document.getElementById('msavebtn');b.disabled=true;b.textContent='Saving…';
-  try{
-    const r=await fetch(`${API}/mood/log`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({mood:selM,score:selS,note})});
-    if(r.ok){showT('Mood saved! ✅');document.getElementById('mnote').value='';document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('sel'));selM=null;selS=0;loadMoodH()}
-    else showT('Could not save. Try again.');
-  }catch{showT('Connection error.')}
-  finally{b.disabled=false;b.textContent='Save mood'}
-}
-async function loadMoodH(){
-  try{
-    const r=await fetch(`${API}/mood/history`,{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)return;
-    const d=await r.json();renderMood(d.logs||[]);
-  }catch{}
-}
-function renderMood(logs){
-  const cc=document.getElementById('ccard'),el=document.getElementById('mlogs');
-  if(!logs.length){cc.style.display='none';el.innerHTML='<div class="empty"><div class="empty-i">😊</div>No mood logs yet.</div>';return}
-  cc.style.display='block';
-  const sorted=[...logs].reverse().slice(-14);
-  if(mChart)mChart.destroy();
-  const ctx=document.getElementById('mc').getContext('2d');
-  mChart=new Chart(ctx,{type:'line',data:{labels:sorted.map(l=>new Date(l.timestamp).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Mood',data:sorted.map(l=>l.score),borderColor:'#10a37f',backgroundColor:'rgba(16,163,127,0.07)',borderWidth:2,pointBackgroundColor:'#10a37f',pointRadius:4,tension:0.4,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:6,ticks:{color:'#8e8e8e',stepSize:1,callback:v=>['','😢','😔','😐','🙂','😄',''][v]},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#8e8e8e'},grid:{display:false}}}}});
-  const EM={5:'😄',4:'🙂',3:'😐',2:'😔',1:'😢'};
-  el.innerHTML=logs.slice(0,10).map(l=>`<div class="mlog"><div class="mlog-e">${EM[l.score]||'😐'}</div><div class="mlog-i"><div class="mlog-n">${esc(l.mood.split(' ').slice(1).join(' ')||l.mood)}</div><div class="mlog-m">${new Date(l.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}${l.note?` · ${esc(l.note)}`:''}</div></div><div class="mlog-b">${l.score}/5</div></div>`).join('');
-}
-
-// EXERCISES
-const EX=[
-  {id:'478',emoji:'🌬️',name:'4-7-8 Breathing',desc:'Activates your parasympathetic nervous system to quickly calm anxiety and stress.',tags:['Breathing','Quick relief','Anxiety'],dur:'5 min',type:'breath',cycles:[{l:'Inhale',d:4,s:1.5},{l:'Hold',d:7,s:1.5},{l:'Exhale',d:8,s:1}],steps:[{t:'Exhale completely',d:'Breathe out through your mouth making a whoosh sound.'},{t:'Inhale for 4',d:'Inhale quietly through your nose for 4 counts.'},{t:'Hold for 7',d:'Hold your breath for a count of 7.'},{t:'Exhale for 8',d:'Exhale through your mouth for 8 counts. Repeat 4 times.'}]},
-  {id:'box',emoji:'⬜',name:'Box Breathing',desc:'Used by Navy SEALs to stay calm under pressure. Equal counts of inhale, hold, exhale, hold.',tags:['Breathing','Focus','Stress'],dur:'5 min',type:'breath',cycles:[{l:'Inhale',d:4,s:1.4},{l:'Hold',d:4,s:1.4},{l:'Exhale',d:4,s:1},{l:'Hold',d:4,s:1}],steps:[{t:'Inhale 4',d:'Breathe in slowly for 4 counts.'},{t:'Hold 4',d:'Hold for 4 counts.'},{t:'Exhale 4',d:'Breathe out for 4 counts.'},{t:'Hold 4',d:'Hold empty for 4 counts. Repeat.'}]},
-  {id:'54321',emoji:'🌿',name:'5-4-3-2-1 Grounding',desc:'Anchors you in the present moment and interrupts anxiety spirals.',tags:['Grounding','Mindfulness','Panic'],dur:'5 min',type:'steps',steps:[{t:'5 things you SEE',d:'Name 5 things you can see right now.'},{t:'4 things you TOUCH',d:'Notice 4 textures or surfaces.'},{t:'3 things you HEAR',d:'Listen for 3 sounds near and far.'},{t:'2 things you SMELL',d:'Notice 2 scents around you.'},{t:'1 thing you TASTE',d:'Notice what you taste. Take a breath.'}]},
-  {id:'pmr',emoji:'💪',name:'Progressive Muscle Relaxation',desc:'Tense and release muscle groups to release physical anxiety tension.',tags:['Body','Relaxation','Sleep'],dur:'10 min',type:'timer',secs:600,steps:[{t:'Feet & calves',d:'Curl toes tightly 5 seconds, then release.'},{t:'Thighs & glutes',d:'Squeeze 5 seconds, let go.'},{t:'Stomach',d:'Tighten 5 seconds, release.'},{t:'Hands & arms',d:'Fists 5 seconds, open wide.'},{t:'Shoulders',d:'Shrug to ears 5 seconds, drop.'},{t:'Face',d:'Scrunch 5 seconds, relax completely.'}]},
-  {id:'scan',emoji:'🧠',name:'Mindful Body Scan',desc:'Guides awareness through your body, releasing tension and cultivating calm.',tags:['Meditation','Body','Sleep'],dur:'10 min',type:'timer',secs:600,steps:[{t:'Get comfortable',d:'Lie down or sit. Close eyes. 3 deep breaths.'},{t:'Start at feet',d:'Bring attention to feet. Notice sensations.'},{t:'Move upward',d:'Travel through legs, hips, stomach, chest, arms.'},{t:'Reach your head',d:'Notice neck, jaw, face. Let everything soften.'},{t:'Rest in awareness',d:'Feel complete relaxation through your whole body.'}]},
-  {id:'journal',emoji:'📓',name:'Anxiety Journaling',desc:'Write out your worries to gain perspective and reduce their power.',tags:['Journaling','Perspective','Daily'],dur:'10 min',type:'steps',steps:[{t:'Write the worry',d:'What exactly are you anxious about?'},{t:'Rate it 1-10',d:'How intense is the feeling?'},{t:'Evidence for & against',d:'What supports this worry? What argues against it?'},{t:'Best & worst case',d:'Write both possible outcomes.'},{t:'Most likely outcome',d:'What\'s the realistic, balanced outcome?'},{t:'One action step',d:'What can you do right now, however small?'}]},
-  {id:'cold',emoji:'💧',name:'Cold Water Reset',desc:'Activates the dive reflex to instantly slow heart rate and calm panic.',tags:['Quick relief','Physical','Panic'],dur:'2 min',type:'steps',steps:[{t:'Get cold water',d:'Fill a bowl with ice cold water.'},{t:'Deep breath in',d:'Inhale slowly and deeply.'},{t:'Submerge your face',d:'Put your face in cold water 15-30 seconds.'},{t:'Feel it work',d:'Your heart rate slows — that\'s the dive reflex.'},{t:'Repeat',d:'Do 2-3 times for acute panic.'}]},
-  {id:'gratitude',emoji:'🙏',name:'Gratitude Practice',desc:'Rewires the anxious brain toward positivity with regular practice.',tags:['Positivity','Daily','Mindfulness'],dur:'5 min',type:'steps',steps:[{t:'3 good things',d:'Name 3 specific things that went well today.'},{t:'Why they happened',d:'Write the reason each one happened.'},{t:'Savour each one',d:'30 seconds of genuine gratitude for each.'},{t:'Thank someone',d:'Write a short thank you to someone who helped.'},{t:'Make it a habit',d:'21 nights for lasting brain changes.'}]}
-];
-
-function renderEx(){
-  const g=document.getElementById('egrid');if(!g)return;
-  g.innerHTML=EX.map(e=>`<div class="ecard" onclick="openEx('${e.id}')"><div class="eemoji">${e.emoji}</div><div class="ename">${e.name}</div><div class="edesc">${e.desc}</div><div class="etags">${e.tags.map(t=>`<span class="etag">${t}</span>`).join('')}</div><div class="edur">⏱ ${e.dur}</div></div>`).join('');
-}
-function openEx(id){
-  const ex=EX.find(e=>e.id===id);if(!ex)return;
-  let h=`<div class="memo">${ex.emoji}</div><div class="mtitle">${ex.name}</div><div class="mdesc">${ex.desc}</div>`;
-  if(ex.type==='breath'){
-    h+=`<div class="bwrap"><div class="bcirc" id="bc">Ready</div><div class="bcnt" id="bcnt"></div><div class="blbl" id="blbl">Press Start to begin</div><div class="mbtns" style="justify-content:center"><button class="mbtn2 p" onclick="startB('${id}')">▶ Start</button><button class="mbtn2 s" onclick="stopB()">■ Stop</button></div></div>`;
-  }else if(ex.type==='timer'){
-    const m=Math.floor(ex.secs/60),s=ex.secs%60;
-    h+=`<div class="twrap"><svg class="tsvg" viewBox="0 0 140 140"><circle class="tbg" cx="70" cy="70" r="54"/><circle class="tprog" id="tprog" cx="70" cy="70" r="54" stroke-dasharray="${2*Math.PI*54}" stroke-dashoffset="0"/><text class="ttxt" id="ttxt" x="70" y="70">${m}:${String(s).padStart(2,'0')}</text></svg><div class="mbtns" style="justify-content:center"><button class="mbtn2 p" onclick="startT(${ex.secs})">▶ Start</button><button class="mbtn2 s" onclick="stopT()">■ Stop</button></div></div>`;
-  }
-  h+=`<div class="steps">${ex.steps.map((s,i)=>`<div class="step"><div class="snum">${i+1}</div><div class="sbody"><div class="stitle2">${s.t}</div><div class="stext">${s.d}</div></div></div>`).join('')}</div>`;
-  document.getElementById('mbody').innerHTML=h;
-  document.getElementById('ov').classList.add('on');
-}
-function clmod(){document.getElementById('ov').classList.remove('on');stopB();stopT()}
-function clov(e){if(e.target===document.getElementById('ov'))clmod()}
-
-function startB(id){
-  const ex=EX.find(e=>e.id===id);if(!ex?.cycles)return;
-  stopB();let ci=0,cnt=0;
-  const bc=document.getElementById('bc'),bk=document.getElementById('bcnt'),bl=document.getElementById('blbl');
-  function run(){
-    const c=ex.cycles[ci%ex.cycles.length];
-    bc.textContent=c.l;bl.textContent=c.l;
-    bc.style.transform=`scale(${c.s})`;
-    bc.style.background=c.s>1.2?'rgba(16,163,127,0.28)':'rgba(16,163,127,0.1)';
-    bc.style.borderColor=c.s>1.2?'#10a37f':'rgba(16,163,127,0.35)';
-    cnt=c.d;bk.textContent=cnt;
-    bInt=setInterval(()=>{cnt--;bk.textContent=cnt;if(cnt<=0){clearInterval(bInt);ci++;run()}},1000);
-  }
-  run();
-}
-function stopB(){
-  if(bInt){clearInterval(bInt);bInt=null}
-  const bc=document.getElementById('bc'),bk=document.getElementById('bcnt'),bl=document.getElementById('blbl');
-  if(bc){bc.textContent='Ready';bc.style.transform='scale(1)';bc.style.background='rgba(16,163,127,0.1)';bc.style.borderColor='rgba(16,163,127,0.35)'}
-  if(bk)bk.textContent='';if(bl)bl.textContent='Press Start to begin';
-}
-function startT(total){
-  stopT();let rem=total;
-  const pg=document.getElementById('tprog'),tx=document.getElementById('ttxt');
-  const c=2*Math.PI*54;
-  function u(){
-    pg.style.strokeDashoffset=c*(1-rem/total);
-    const m=Math.floor(rem/60),s=rem%60;
-    tx.textContent=`${m}:${String(s).padStart(2,'0')}`;
-    if(rem<=0){clearInterval(tInt);tx.textContent='Done!';showT('Exercise complete! 🎉')}
-  }
-  u();tInt=setInterval(()=>{rem--;u()},1000);
-}
-function stopT(){if(tInt){clearInterval(tInt);tInt=null}}
-
-// UTILS
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-function showT(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),3000)}
-
-document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
-document.getElementById('rp').addEventListener('keydown',e=>{if(e.key==='Enter')doReg()});
-</script>
+    const textarea = document.querySelector('.cinput');
+    textarea.addEventListener('input', function(){
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+    });
+  </script>
 </body>
 </html>
