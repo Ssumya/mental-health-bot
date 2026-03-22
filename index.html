@@ -20,7 +20,7 @@
   --sw:260px;--font:'DM Sans',-apple-system,sans-serif;
 }
 html{height:100%;height:100dvh}
-body{font-family:var(--font);color:var(--text);background:var(--bg);height:100%;display:flex;flex-direction:column;overflow:hidden}
+body{font-family:var(--font);color:var(--text);background:var(--bg);height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
 
 /* AUTH */
@@ -44,9 +44,9 @@ body{font-family:var(--font);color:var(--text);background:var(--bg);height:100%;
 .aerr{background:var(--danger-pale);border:1px solid rgba(239,68,68,.2);border-radius:var(--r2);padding:.6rem .9rem;font-size:.82rem;color:#fca5a5;margin-bottom:1rem;display:none}
 
 /* APP */
-#app{display:none;height:100%;width:100%}
+#app{display:none;height:100vh;height:100dvh;width:100%;overflow:hidden}
 #app.on{display:flex}
-.layout{display:flex;height:100%;width:100%}
+.layout{display:flex;height:100%;width:100%;overflow:hidden}
 
 /* SIDEBAR */
 .sb{width:var(--sw);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;height:100%;overflow:hidden}
@@ -77,7 +77,7 @@ body{font-family:var(--font);color:var(--text);background:var(--bg);height:100%;
 .lout:hover{color:var(--danger)}
 
 /* MAIN */
-.main{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;min-width:0}
+.main{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;min-width:0;min-height:0}
 .hdr{padding:.8rem 1.25rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.75rem;flex-shrink:0;background:var(--bg)}
 .hdr-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--accent-pale);flex-shrink:0}
 .hdr-title{font-size:.93rem;font-weight:500;flex:1;letter-spacing:-.01em}
@@ -210,35 +210,96 @@ body{font-family:var(--font);color:var(--text);background:var(--bg);height:100%;
 /* MOBILE */
 .mobbar{display:none}
 .mobfab{display:none}
-.sbov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49}
+.sbov{display:none}
 @media(max-width:768px){
-  body{height:100dvh}
-  #app{height:100dvh}
-  .layout{height:100dvh;flex-direction:column}
-  .sb{display:none}
-  .mob-menu{display:flex}
-  .sb.mopen{display:flex;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:50;box-shadow:var(--sh2)}
-  .sbov{display:none}
-  .sbov.on{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49}
-  .main{flex:1;min-height:0;overflow:hidden}
-  .msgs{padding:.75rem 0}
-  .mwrap{padding:.38rem .9rem}
-  .iarea{padding:.5rem .75rem .65rem}
-  .spg{padding:1rem}
-  .egrid{grid-template-columns:1fr}
-  .welcome{padding:1.5rem 1rem}
-  .wtitle{font-size:1.35rem}
-  .hdr{padding:.65rem 1rem}
-  .hdr-title{font-size:.88rem}
+  html,body{height:100dvh;overflow:hidden}
+  #app{height:100dvh;overflow:hidden}
+  .layout{height:100%;flex-direction:column;overflow:hidden}
+  /* Hide sidebar completely on mobile */
+  .sb{display:none !important}
+  .mob-menu{display:flex !important}
+  /* Sidebar when opened via hamburger */
+  .sb.mopen{
+    display:flex !important;
+    position:fixed;top:0;left:0;bottom:0;
+    width:75%;max-width:280px;
+    z-index:100;
+    box-shadow:var(--sh2);
+    overflow-y:auto;
+  }
+  /* Overlay when sidebar open */
+  .sbov{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.6);
+    z-index:99;
+  }
+  .sbov.on{display:block}
+  /* Main takes full width */
+  .main{
+    flex:1;width:100%;
+    display:flex;flex-direction:column;
+    overflow:hidden;min-height:0;
+  }
+  /* Header */
+  .hdr{padding:.6rem .9rem;flex-shrink:0}
+  .hdr-title{font-size:.85rem}
   .hdr-right{display:none}
-  .mobbar{display:flex;background:var(--bg2);border-top:1px solid var(--border2);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0)}
-  .mobbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.52rem .2rem;background:none;border:none;color:var(--text3);font-family:var(--font);font-size:.57rem;cursor:pointer;transition:color .15s;gap:.18rem}
-  .mobbtn svg{width:19px;height:19px}
+  /* Chat messages */
+  .msgs{padding:.5rem 0;flex:1;overflow-y:auto}
+  .mwrap{padding:.35rem .85rem}
+  /* Input */
+  .iarea{padding:.45rem .75rem .6rem;flex-shrink:0}
+  /* Scroll pages */
+  .spg{padding:.85rem;flex:1;overflow-y:auto}
+  /* Exercises */
+  .egrid{grid-template-columns:1fr}
+  /* Welcome screen */
+  .welcome{padding:1.25rem .85rem}
+  .wtitle{font-size:1.3rem}
+  .wsub{font-size:.85rem}
+  /* Pages must be flex column */
+  .pg{height:100%}
+  .pg.on{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+  /* Bottom nav */
+  .mobbar{
+    display:flex !important;
+    background:var(--bg2);
+    border-top:1px solid var(--border2);
+    flex-shrink:0;
+    padding-bottom:env(safe-area-inset-bottom,0);
+    width:100%;
+  }
+  .mobbtn{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:.5rem .15rem;
+    background:none;border:none;
+    color:var(--text3);font-family:var(--font);
+    font-size:.55rem;cursor:pointer;
+    transition:color .15s;gap:.15rem;
+  }
+  .mobbtn svg{width:18px;height:18px}
   .mobbtn.on{color:var(--accent)}
-  .mobfab{display:flex;position:fixed;bottom:calc(54px + env(safe-area-inset-bottom,0) + 10px);right:1rem;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;border:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(16,163,127,.4);z-index:50;transition:transform .15s}
-  .mobfab:active{transform:scale(.91)}
-  .mobfab svg{width:18px;height:18px}
-  .mobfab.hide{display:none}
+  /* Floating new chat button */
+  .mobfab{
+    display:flex !important;
+    position:fixed;
+    bottom:calc(52px + env(safe-area-inset-bottom,0) + 12px);
+    right:.9rem;
+    width:40px;height:40px;
+    border-radius:50%;
+    background:var(--accent);color:#fff;
+    border:none;
+    align-items:center;justify-content:center;
+    cursor:pointer;
+    box-shadow:0 4px 18px rgba(16,163,127,.45);
+    z-index:50;
+    transition:transform .15s;
+  }
+  .mobfab:active{transform:scale(.9)}
+  .mobfab svg{width:17px;height:17px}
+  .mobfab.hide{display:none !important}
 }
 </style>
 </head>
