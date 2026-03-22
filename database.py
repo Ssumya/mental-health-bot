@@ -113,18 +113,12 @@ def authenticate_user(username: str, password: str) -> dict | None:
 
 
 # ── Chat history operations ───────────────────────────────────────────────────
-def save_message(user_id: str, role: str, message: str, tool_called: str = "None"):
-    """Append one message to chat_history."""
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        """INSERT INTO chat_history (user_id, role, message, tool_called)
-           VALUES (%s, %s, %s, %s)""",
-        (int(user_id), role, message, tool_called)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+def save_message(user_id, role, message, tool_called='None', session_id=None):
+    conn=get_conn(); cur=conn.cursor()
+    cur.execute('INSERT INTO chat_history(user_id,session_id,role,message,tool_called)'
+                ' VALUES(%s,%s,%s,%s,%s)',
+                (int(user_id), int(session_id) if session_id else None, role, message, tool_called))
+    conn.commit(); cur.close(); conn.close()
 
 
 def get_user_history(user_id: str, limit: int = 100) -> list[dict]:
