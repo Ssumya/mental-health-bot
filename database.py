@@ -234,3 +234,86 @@ def get_mood_history(user_id: str, limit: int = 30) -> list[dict]:
         }
         for r in rows
     ]
+
+
+# ── Session operations ────────────────────────────────────────────────────────
+def create_session(user_id: str, title: str = "New Chat") -> dict:
+    """Create a new chat session."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        """INSERT INTO chat_sessions (user_id, title)
+           VALUES (%s, %s) RETURNING id, title, created_at""",
+        (int(user_id), title)
+    )
+    row = cur.fetchone()
+    conn.commit(); cur.close(); conn.close()
+    return {
+        "id": str(row["id"]),
+        "title": row["title"],
+        "created_at": row["created_at"].isoformat()
+    }
+
+
+def get_sessions(user_id: str) -> list[dict]:
+    """Get all sessions for a user, newest first."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        """SELECT s.id, s.title, s.created_at,
+                  COUNT(ch.id) as message_count,
+                  MAX(ch.timestamp) as last_message
+           FROM chat_sessions s
+           LEFT JOIN chat_history ch ON ch.session_id = s.id
+           WHERE s.user_id = %s
+           GROUP BY s.id
+           ORDER BY COALESCE(MAX(ch.timestamp), s.created_at) DESC""",
+        (int(user_id),)
+    )
+    rows = cur.fetchall()
+    cur.close(); conn.close()
+    return [
+        {
+            "id": str(r["id"]),
+            "title": r["title"],
+            "created_at": r["created_at"].isoformat(),
+            "message_count": r["message_count"],
+            "last_message": r["last_message"].isoformat() if r["last_message"] else None
+        }
+        for r in rows
+    ]
+
+
+def get_session_messages(session_id: str, user_id: str) -> list[dict]:
+    """Get all messages for a specific session."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute(
+        """SELECT role, message, tool_called, timestamp
+           FROM chat_history
+           WHERE session_id = %s AND user_id = %s
+           ORDER BY timestamp ASC""",
+        (int(session_id), int(user_id))
+    )
+    rows = cur.fetchall()
+    cur.close(); conn.close()
+    return [
+        {
+            "role": r["role"],
+            "message": r["message"],
+            "tool_called": r["tool_called"],
+            "timestamp": r["timestamp"].isoformat()
+        }
+        for r in rows
+    ]
+
+
+def update_session_title(session_id: str, user_id: str, title: str):
+    """Update session title (auto-set from first user message)."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE chat_sessions SET title = %s WHERE id = %s AND user_id = %s",
+        (title[:60], int(session_id), int(user_id))
+    )
+    conn.commit(); cur.close(); conn.close()
