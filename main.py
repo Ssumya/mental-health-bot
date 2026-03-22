@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── Request models ───────────────────────────────────────────────────────────
+# ─── Request models ─────────────────────────────────────────────────────────
 class LoginRequest(BaseModel):
     username: str
     password: str
