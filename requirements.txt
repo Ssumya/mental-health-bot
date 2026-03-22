@@ -11,3 +11,10 @@ ollama
 streamlit
 requests
 python-dotenv
+fastapi
+uvicorn
+pydantic
+PyJWT
+psycopg2-binary
+google-generativeai
+python-dotenv
