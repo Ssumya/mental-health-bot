@@ -198,7 +198,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--charco
 .toast{position:fixed;bottom:2rem;right:2rem;background:var(--charcoal);color:white;padding:.7rem 1.2rem;border-radius:10px;font-size:.875rem;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);transition:all .3s;z-index:9999;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 
-@media(max-width:680px){.auth-left{display:none}.auth-right{width:100%}.sidebar{display:none}}
+@media(max-width:768px){
+  .auth-left{display:none}
+  .auth-right{width:100%;padding:1.5rem}
+  .sidebar{display:none}
+  .main{width:100%;min-width:0}
+  .app-layout{flex-direction:column}
+  .messages{padding:1rem}
+  .input-area{padding:.5rem 1rem .75rem}
+  .mood-page,.exercises-page,.history-page{padding:1rem}
+  .mood-btns{gap:.4rem}
+  .mood-btn{min-width:60px;padding:.6rem .3rem}
+  .ex-grid{grid-template-columns:1fr}
+  .topbar{padding:.75rem 1rem}
+  body{overflow:auto}
+}
+
 </style>
 </head>
 <body>
