@@ -1,40 +1,30 @@
 import os
-import google.generativeai as genai
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+GROQ_API_KEY   = os.getenv("GROQ_API_KEY", "")
 
-SYSTEM_PROMPT = """You are Dr. Emily Hartman, a warm, experienced clinical psychologist providing real mental health support.
+SYSTEM_PROMPT = """You are Dr. Emily Hartman, a warm, experienced clinical psychologist.
 
-YOUR RESPONSE STRUCTURE — follow this for EVERY message:
-1. ACKNOWLEDGE: Validate what the user shared with genuine empathy (1-2 sentences)
-2. INSIGHT: Explain what might be happening psychologically — normalize it (1-2 sentences)
-3. TIP / TECHNIQUE: Give ONE concrete, practical tip or technique they can try RIGHT NOW (2-4 sentences). Be specific.
-4. GENTLE QUESTION: End with ONE open question to understand them better (1 sentence)
+YOUR RESPONSE STRUCTURE for EVERY message:
+1. ACKNOWLEDGE the feeling with empathy (1-2 sentences)
+2. INSIGHT: normalize what they are experiencing (1-2 sentences)
+3. TIP: give ONE specific, practical technique they can try RIGHT NOW (2-3 sentences)
+4. ONE gentle question to understand them better
 
-TIPS YOU SHOULD ACTIVELY SUGGEST (rotate based on context):
-- Breathing: "Try the 4-7-8 technique — inhale for 4 counts, hold for 7, exhale for 8. Do this 3 times."
-- Grounding: "Try the 5-4-3-2-1 method — name 5 things you can see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste."
-- Journaling: "Write your worries down uncensored for 10 minutes — getting them out of your head reduces their power."
-- Movement: "Even a 5-minute walk outside can significantly reduce cortisol and shift your mood."
-- Cold water: "Splash cold water on your face — it activates the dive reflex and instantly calms your nervous system."
-- Box breathing: "Inhale 4 counts, hold 4, exhale 4, hold 4 — repeat 4 times to calm your nervous system."
-- Self-compassion: "Place your hand on your heart and say: This is hard, and that is okay. I am doing my best."
-- Cognitive reframing: "Ask yourself: Is this thought a fact or just a fear? What would you tell a friend in this situation?"
-- Worry scheduling: "Schedule a 15-minute worry time each day and postpone worries to that time."
-- Sleep hygiene: "Keep your phone out of bed, dim lights 1 hour before sleep, and keep a consistent bedtime."
+TIPS TO SUGGEST based on what they share:
+- Anxiety: "Try 4-7-8 breathing — inhale 4 counts, hold 7, exhale 8. Do this 3 times."
+- Stress: "Try box breathing — inhale 4, hold 4, exhale 4, hold 4. Repeat 4 times."
+- Overthinking: "Write your worries down for 10 minutes — getting them out of your head reduces their power."
+- Sadness: "A 5-minute walk outside can reduce cortisol and shift your mood significantly."
+- Panic: "Splash cold water on your face — it activates your dive reflex and slows your heart rate instantly."
+- Sleep: "Keep your phone out of bed and dim lights 1 hour before sleep."
+- Self-criticism: "Place your hand on your heart and say: This is hard and that is okay. I am doing my best."
 
-RESPONSE RULES:
-- ALWAYS include a concrete tip — never give ONLY questions
-- Keep the entire response under 120 words
-- Use simple, warm, everyday language — not clinical jargon
-- Write in flowing natural paragraphs — no bullet points or numbered lists
-- Never use labels like Acknowledgement or Tip — blend everything seamlessly
-- If someone mentions anxiety → suggest breathing or grounding
-- If someone mentions sleep issues → suggest sleep hygiene
-- If someone mentions overthinking → suggest journaling or worry scheduling
-- If someone mentions sadness → suggest movement or self-compassion"""
+RULES:
+- Always include a tip — never give only questions
+- Keep response under 120 words
+- Write naturally — no bullet points, no labels
+- Blend empathy, insight, tip, and question seamlessly"""
 
 EMERGENCY_KEYWORDS = [
     "suicide", "kill myself", "end my life", "want to die",
@@ -42,37 +32,89 @@ EMERGENCY_KEYWORDS = [
     "cant go on", "can't go on", "don't want to be here"
 ]
 
+EMERGENCY_RESPONSE = (
+    "I'm genuinely worried about you right now, and I'm so glad you reached out. "
+    "Please call iCall at 9152987821 or your local emergency services immediately. "
+    "You don't have to face this alone — help is available right now.",
+    "emergency_call_tool"
+)
 
-def get_response(message: str) -> tuple[str, str]:
-    """Call Gemini and return (response, tool_called)."""
 
-    # Check for emergency keywords
-    if any(keyword in message.lower() for keyword in EMERGENCY_KEYWORDS):
-        from tools import call_emergency
-        call_emergency()
-        return (
-            "I'm genuinely worried about you right now, and I'm so glad you reached out. "
-            "Please reach out to someone you trust immediately, "
-            "or call iCall at 9152987821 (India) or your local emergency services. "
-            "You don't have to face this alone — help is available right now.",
-            "emergency_call_tool"
-        )
-
-    # Normal response via Gemini
+def _try_gemini(message: str) -> str | None:
+    """Try Gemini API, return text or None on failure."""
+    if not GEMINI_API_KEY:
+        return None
     try:
-        full_prompt = f"{SYSTEM_PROMPT}\n\nUser: {message}\nDr. Emily Hartman:"
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt = f"{SYSTEM_PROMPT}\n\nUser: {message}\nDr. Emily Hartman:"
         response = model.generate_content(
-            full_prompt,
+            prompt,
             generation_config=genai.types.GenerationConfig(
                 max_output_tokens=200,
                 temperature=0.75,
             )
         )
-        return response.text.strip(), "None"
+        text = response.text.strip()
+        if text:
+            return text
     except Exception as e:
-        return (
-            "I'm having a brief technical issue, but I'm here for you. "
-            "Try taking 3 slow deep breaths — inhale for 4 counts, exhale for 6. "
-            "Please try again in a moment.",
-            "None"
+        print(f"Gemini error: {e}")
+    return None
+
+
+def _try_groq(message: str) -> str | None:
+    """Try Groq API, return text or None on failure."""
+    if not GROQ_API_KEY:
+        return None
+    try:
+        from groq import Groq
+        client = Groq(api_key=GROQ_API_KEY)
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user",   "content": message}
+            ],
+            max_tokens=200,
+            temperature=0.75
         )
+        text = response.choices[0].message.content.strip()
+        if text:
+            return text
+    except Exception as e:
+        print(f"Groq error: {e}")
+    return None
+
+
+def get_response(message: str) -> tuple[str, str]:
+    """Try Gemini first, fall back to Groq, then return error message."""
+
+    # Emergency check
+    if any(kw in message.lower() for kw in EMERGENCY_KEYWORDS):
+        try:
+            from tools import call_emergency
+            call_emergency()
+        except Exception:
+            pass
+        return EMERGENCY_RESPONSE
+
+    # Try Gemini first
+    text = _try_gemini(message)
+    if text:
+        return text, "None"
+
+    # Fall back to Groq
+    text = _try_groq(message)
+    if text:
+        return text, "None"
+
+    # Both failed
+    return (
+        "I'm here for you. I'm having a brief technical issue right now. "
+        "While I reconnect, try taking 3 slow deep breaths — "
+        "inhale for 4 counts, hold for 2, exhale for 6. "
+        "Please try again in a moment.",
+        "None"
+    )
