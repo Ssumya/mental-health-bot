@@ -89,7 +89,7 @@ def get_response(message: str) -> tuple[str, str]:
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": message}
             ],
-            max_tokens=250,
+            max_tokens=500,
             temperature=0.8,
             stream=False
         )
