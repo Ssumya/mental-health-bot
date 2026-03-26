@@ -53,7 +53,6 @@ html,body{
   overflow-x:hidden;
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
-  touch-action:manipulation;
 }
 body{
   min-height:100dvh;
@@ -531,13 +530,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   .hero-stats{gap:1.25rem}
   footer{flex-direction:column;text-align:center;padding:1.25rem}
 }
-  /* MOBILE TOUCH FIX */
-button, a, input, textarea, select {
-  pointer-events: auto;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
 .m-drawer,
 .auth-box,
 .modal,
@@ -551,10 +543,51 @@ button, a, input, textarea, select {
   pointer-events: auto;
 }
 
-.m-dov:not(.on),
-.auth-ov:not(.on),
-.ov:not(.on) {
-  pointer-events: none !important;
+/* ===== SAFE TOUCH / OVERLAY FIX ===== */
+button, a, input, textarea, select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a {
+  position: relative;
+  z-index: 5;
+}
+
+/* overlays should NEVER block taps when hidden */
+.m-dov,
+.auth-ov,
+.ov {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity .25s ease, visibility .25s ease;
+}
+
+/* overlays active only when opened */
+.m-dov.on,
+.auth-ov.on,
+.ov.on {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* landing page and buttons always clickable */
+#landing,
+.hero,
+.nav,
+.nav-actions,
+.hero-actions {
+  position: relative;
+  z-index: 10;
+}
+
+/* app layout safety */
+#app,
+#landing {
+  min-height: 100dvh;
+  width: 100%;
 }
 
 /* Better mobile scrolling */
@@ -1134,7 +1167,7 @@ document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')
 document.getElementById('rp').addEventListener('keydown',e=>{if(e.key==='Enter')doReg()});
 <script>
 /* =========================
-   MOBILE TOUCH FIX
+   SAFE MOBILE TOUCH FIX
 ========================= */
 (function () {
   const setAppHeight = () => {
@@ -1145,25 +1178,75 @@ document.getElementById('rp').addEventListener('keydown',e=>{if(e.key==='Enter')
   window.addEventListener('resize', setAppHeight);
   window.addEventListener('orientationchange', setAppHeight);
 
-  function cleanupOverlays() {
+  // only control overlays safely
+  function syncOverlayState() {
     document.querySelectorAll('.m-dov, .auth-ov, .ov').forEach(el => {
-      if (!el.classList.contains('on')) {
-        el.style.pointerEvents = 'none';
-        el.style.opacity = '';
-      } else {
-        el.style.pointerEvents = 'auto';
+      const isOn = el.classList.contains('on');
+      el.style.pointerEvents = isOn ? 'auto' : 'none';
+      el.style.visibility = isOn ? 'visible' : 'hidden';
+      el.style.opacity = isOn ? '1' : '0';
+    });
+  }
+
+  // watch overlay state changes
+  const overlays = document.querySelectorAll('.m-dov, .auth-ov, .ov');
+  const observer = new MutationObserver(syncOverlayState);
+  overlays.forEach(el => {
+    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+
+  syncOverlayState();
+
+  // drawer elements
+  const drawer = document.getElementById('m-drawer');
+  const drawerOverlay = document.getElementById('m-dov');
+
+  // preserve your original functions if they exist
+  const originalOpenDr = window.openDr;
+  const originalCloseDr = window.closeDr;
+
+  window.openDr = function () {
+    if (typeof originalOpenDr === 'function') originalOpenDr();
+    if (drawer) drawer.classList.add('open');
+    if (drawerOverlay) drawerOverlay.classList.add('on');
+    syncOverlayState();
+  };
+
+  window.closeDr = function () {
+    if (typeof originalCloseDr === 'function') originalCloseDr();
+    if (drawer) drawer.classList.remove('open');
+    if (drawerOverlay) drawerOverlay.classList.remove('on');
+    syncOverlayState();
+  };
+
+  // clicking outside drawer closes it
+  if (drawerOverlay) {
+    drawerOverlay.addEventListener('click', function () {
+      window.closeDr();
+    });
+  }
+
+  // auth modal outside click close
+  const authOverlay = document.getElementById('auth-ov');
+  if (authOverlay) {
+    authOverlay.addEventListener('click', function (e) {
+      if (e.target === authOverlay && typeof window.closeAuth === 'function') {
+        window.closeAuth();
       }
     });
   }
 
-  const observer = new MutationObserver(cleanupOverlays);
-  document.querySelectorAll('.m-dov, .auth-ov, .ov').forEach(el => {
-    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  // generic modal close safety
+  document.querySelectorAll('.ov').forEach(ov => {
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov) {
+        ov.classList.remove('on');
+        syncOverlayState();
+      }
+    });
   });
 
-  cleanupOverlays();
-
-  // Chat input focus fix for mobile keyboard
+  // mobile keyboard / input fix
   const input = document.querySelector('.ci');
   if (input) {
     input.addEventListener('focus', () => {
@@ -1173,52 +1256,8 @@ document.getElementById('rp').addEventListener('keydown',e=>{if(e.key==='Enter')
     });
   }
 
-  // Drawer touch fix
-  const drawer = document.getElementById('m-drawer');
-  const drawerOverlay = document.getElementById('m-dov');
-
-  const originalOpenDr = window.openDr;
-  const originalCloseDr = window.closeDr;
-
-  window.openDr = function () {
-    if (typeof originalOpenDr === 'function') originalOpenDr();
-    if (drawer) drawer.classList.add('open');
-    if (drawerOverlay) drawerOverlay.classList.add('on');
-    document.body.style.overflow = 'hidden';
-    cleanupOverlays();
-  };
-
-  window.closeDr = function () {
-    if (typeof originalCloseDr === 'function') originalCloseDr();
-    if (drawer) drawer.classList.remove('open');
-    if (drawerOverlay) drawerOverlay.classList.remove('on');
-    document.body.style.overflow = '';
-    cleanupOverlays();
-  };
-
-  // Auth modal touch fix
-  const authOv = document.getElementById('auth-ov');
-  if (authOv) {
-    authOv.addEventListener('click', function (e) {
-      if (e.target === authOv && typeof window.closeAuth === 'function') {
-        window.closeAuth();
-      }
-    });
-  }
-
-  // Exercise modal touch fix
-  document.querySelectorAll('.ov').forEach(modalOv => {
-    modalOv.addEventListener('click', function (e) {
-      if (e.target === modalOv) {
-        modalOv.classList.remove('on');
-        cleanupOverlays();
-      }
-    });
-  });
-
-  // Fix buttons not reacting after drawer/modal close
-  document.addEventListener('touchstart', function(){}, {passive:true});
-
+  // force touch activation on iOS/Android
+  document.addEventListener('touchstart', function(){}, { passive: true });
 })();
 </script>
 </script>
