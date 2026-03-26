@@ -3,364 +3,600 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>SafeSpace · Mental Health AI</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+<title>SafeSpace · AI Mental Health Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  /* Desktop dark (Claude style) */
-  --bg:#212121;--bg2:#2f2f2f;--bg3:#3a3a3a;
-  --surface:#2f2f2f;--surface2:#383838;
-  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.06);
-  --text:#ececec;--text2:#b4b4b4;--text3:#8e8e8e;
-  --accent:#10a37f;--accent-h:#0d8f6f;
-  --accent-pale:rgba(16,163,127,0.15);--accent-b:rgba(16,163,127,0.3);
-  --danger:#ef4444;--danger-pale:rgba(239,68,68,0.1);
-  --r:12px;--r2:8px;--sw:260px;
-  --sh:0 2px 8px rgba(0,0,0,0.4);--sh2:0 8px 32px rgba(0,0,0,0.5);
-  --font:'DM Sans',-apple-system,sans-serif;
+  --g1:#0a0a0a;--g2:#111111;--g3:#1a1a1a;--g4:#242424;
+  --acc:#10b981;--acc2:#059669;--acc3:#34d399;
+  --text:#f5f5f5;--text2:#a3a3a3;--text3:#525252;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.04);
+  --glow:0 0 40px rgba(16,185,129,0.15);
+  --sh:0 4px 24px rgba(0,0,0,0.5);
+  --font:'Inter',-apple-system,sans-serif;
+  --r:16px;--r2:12px;--r3:8px;
 }
-html,body{height:100%;height:100dvh;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text)}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--g1);color:var(--text);overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+a{color:inherit;text-decoration:none}
 
-/* ── AUTH ──────────────────────────────────────────────────────── */
-#auth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
-.abox{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.25rem;box-shadow:var(--sh2)}
-.alogo{display:flex;align-items:center;gap:.6rem;justify-content:center;margin-bottom:1.75rem}
-.alogo-i{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.95rem}
-.alogo-n{font-size:1.2rem;font-weight:600;letter-spacing:-.02em}
-.atitle{font-size:1.35rem;font-weight:600;text-align:center;margin-bottom:.3rem;letter-spacing:-.02em}
-.asub{font-size:.84rem;color:var(--text3);text-align:center;margin-bottom:1.75rem}
-.atabs{display:flex;background:var(--bg3);border-radius:var(--r2);padding:3px;margin-bottom:1.35rem;gap:3px}
-.atab{flex:1;padding:.48rem;border:none;border-radius:6px;background:none;color:var(--text3);font-family:var(--font);font-size:.83rem;font-weight:500;cursor:pointer;transition:all .2s}
-.atab.on{background:var(--surface2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+/* ═══════════════════════════════════════════════════
+   LANDING PAGE
+═══════════════════════════════════════════════════ */
+#landing{min-height:100vh;display:flex;flex-direction:column}
+#landing.hide{display:none}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,10,0.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2)}
+.nav-brand{display:flex;align-items:center;gap:.6rem;font-size:1.15rem;font-weight:700;letter-spacing:-.03em}
+.nav-brand-i{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:.9rem;box-shadow:0 0 20px rgba(16,185,129,0.3)}
+.nav-links{display:flex;align-items:center;gap:.5rem}
+.nav-login{padding:.5rem 1.1rem;background:none;border:1px solid var(--border);border-radius:var(--r3);color:var(--text2);font-family:var(--font);font-size:.84rem;font-weight:500;cursor:pointer;transition:all .2s}
+.nav-login:hover{border-color:var(--acc);color:var(--acc)}
+.nav-signup{padding:.5rem 1.1rem;background:var(--acc);border:none;border-radius:var(--r3);color:#fff;font-family:var(--font);font-size:.84rem;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 0 20px rgba(16,185,129,0.2)}
+.nav-signup:hover{background:var(--acc2);box-shadow:0 0 30px rgba(16,185,129,0.3)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7rem 2rem 4rem;text-align:center;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(80px);animation:float 8s ease-in-out infinite}
+.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.12),transparent 70%);top:-100px;left:50%;transform:translateX(-50%);animation-delay:0s}
+.orb2{width:350px;height:350px;background:radial-gradient(circle,rgba(16,185,129,0.08),transparent 70%);bottom:10%;left:10%;animation-delay:-3s}
+.orb3{width:400px;height:400px;background:radial-gradient(circle,rgba(5,150,105,0.07),transparent 70%);top:20%;right:-50px;animation-delay:-5s}
+@keyframes float{0%,100%{transform:translateY(0) translateX(-50%)}50%{transform:translateY(-30px) translateX(-50%)}}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 50% at 50% 0%,black 0%,transparent 100%)}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .9rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:20px;font-size:.78rem;font-weight:500;color:var(--acc3);margin-bottom:1.5rem;animation:fadeUp .6s ease forwards}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hero-title{font-size:clamp(2.5rem,6vw,5rem);font-weight:900;line-height:1.1;letter-spacing:-.04em;margin-bottom:1.25rem;animation:fadeUp .6s .1s ease both}
+.hero-title span{background:linear-gradient(135deg,var(--acc3),var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(.95rem,2vw,1.15rem);color:var(--text2);line-height:1.75;max-width:560px;margin:0 auto 2.25rem;animation:fadeUp .6s .2s ease both}
+.hero-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;animation:fadeUp .6s .3s ease both}
+.btn-primary{padding:.85rem 2rem;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:.95rem;font-weight:700;cursor:pointer;transition:all .3s;box-shadow:0 0 30px rgba(16,185,129,0.25);letter-spacing:-.01em}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(16,185,129,0.4)}
+.btn-secondary{padding:.85rem 2rem;background:none;border:1px solid var(--border);border-radius:var(--r2);color:var(--text2);font-family:var(--font);font-size:.95rem;font-weight:600;cursor:pointer;transition:all .3s;letter-spacing:-.01em}
+.btn-secondary:hover{border-color:rgba(255,255,255,.2);color:var(--text);background:rgba(255,255,255,.04)}
+.hero-stats{display:flex;gap:3rem;justify-content:center;margin-top:3.5rem;animation:fadeUp .6s .4s ease both;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-size:1.75rem;font-weight:800;background:linear-gradient(135deg,var(--acc3),var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.03em}
+.stat-label{font-size:.78rem;color:var(--text3);margin-top:.2rem;font-weight:500}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* FEATURES SECTION */
+.section{padding:6rem 2rem;position:relative}
+.section-label{display:inline-flex;align-items:center;gap:.4rem;padding:.28rem .75rem;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:20px;font-size:.74rem;font-weight:600;color:var(--acc);letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem}
+.section-title{font-size:clamp(1.75rem,3.5vw,2.75rem);font-weight:800;letter-spacing:-.03em;margin-bottom:.75rem;line-height:1.2}
+.section-sub{font-size:1rem;color:var(--text2);line-height:1.7;max-width:480px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;margin-top:3.5rem}
+.feat-card{background:var(--g2);border:1px solid var(--border);border-radius:var(--r);padding:1.75rem;transition:all .3s;position:relative;overflow:hidden;cursor:default}
+.feat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(16,185,129,0.03),transparent);opacity:0;transition:opacity .3s}
+.feat-card:hover{border-color:rgba(16,185,129,0.2);transform:translateY(-3px);box-shadow:var(--glow)}
+.feat-card:hover::before{opacity:1}
+.feat-icon{width:44px;height:44px;border-radius:12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:1.1rem}
+.feat-title{font-size:1.05rem;font-weight:700;margin-bottom:.4rem;letter-spacing:-.02em}
+.feat-desc{font-size:.86rem;color:var(--text2);line-height:1.65}
+
+/* DEMO SECTION - App Preview */
+.demo-section{padding:4rem 2rem 6rem;overflow:hidden}
+.demo-container{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.demo-text{animation:slideLeft .8s ease both}
+.demo-preview{position:relative;animation:slideRight .8s ease both}
+@keyframes slideLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+.phone-frame{background:var(--g2);border:1px solid var(--border);border-radius:24px;padding:1.25rem;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 60px rgba(16,185,129,0.08);position:relative;max-width:320px;margin:0 auto}
+.phone-notch{width:80px;height:6px;background:var(--g3);border-radius:3px;margin:0 auto 1rem}
+.phone-chat{background:var(--g3);border-radius:14px;overflow:hidden}
+.phone-chat-hdr{padding:.65rem 1rem;background:var(--g4);display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--border2)}
+.phone-chat-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc)}
+.phone-chat-title{font-size:.78rem;font-weight:600;letter-spacing:-.01em}
+.phone-msgs{padding:.75rem;display:flex;flex-direction:column;gap:.6rem;min-height:280px}
+.phone-msg{max-width:85%;padding:.6rem .85rem;border-radius:12px;font-size:.78rem;line-height:1.55}
+.phone-msg.ai{background:var(--g4);color:var(--text);border-radius:3px 12px 12px 12px;align-self:flex-start;position:relative}
+.phone-msg.usr{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-radius:12px 3px 12px 12px;align-self:flex-end}
+.phone-msg.ai::before{content:'🌿';font-size:.7rem;position:absolute;top:-.5rem;left:-.1rem}
+.phone-input{padding:.6rem .75rem;display:flex;align-items:center;gap:.5rem;background:var(--g4);border-top:1px solid var(--border2)}
+.phone-input-box{flex:1;background:var(--g3);border-radius:20px;padding:.4rem .75rem;font-size:.75rem;color:var(--text3)}
+.phone-send{width:28px;height:28px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:.65rem;flex-shrink:0}
+.typing-anim{display:flex;gap:3px;padding:.4rem .85rem;align-items:center}
+.typing-anim span{width:5px;height:5px;border-radius:50%;background:var(--acc3);animation:td 1.4s infinite}
+.typing-anim span:nth-child(2){animation-delay:.2s}.typing-anim span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+.demo-features{display:flex;flex-direction:column;gap:1rem;margin-top:2.5rem}
+.demo-feat{display:flex;align-items:flex-start;gap:.85rem}
+.demo-feat-icon{width:36px;height:36px;border-radius:10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;margin-top:2px}
+.demo-feat-title{font-size:.9rem;font-weight:600;margin-bottom:.2rem;letter-spacing:-.01em}
+.demo-feat-desc{font-size:.81rem;color:var(--text2);line-height:1.6}
+
+/* HOW IT WORKS */
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem;margin-top:3.5rem;position:relative}
+.step-card{text-align:center;padding:1.5rem 1rem}
+.step-num{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-size:1.1rem;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 1.1rem;box-shadow:0 0 25px rgba(16,185,129,0.25)}
+.step-title{font-size:1rem;font-weight:700;margin-bottom:.4rem;letter-spacing:-.02em}
+.step-desc{font-size:.84rem;color:var(--text2);line-height:1.65}
+
+/* TESTIMONIALS */
+.testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;margin-top:3rem}
+.tcard{background:var(--g2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;transition:all .3s}
+.tcard:hover{border-color:rgba(16,185,129,0.2);box-shadow:var(--glow)}
+.tcard-text{font-size:.9rem;color:var(--text2);line-height:1.7;margin-bottom:1.1rem;font-style:italic}
+.tcard-text::before{content:'"';color:var(--acc);font-size:1.5rem;line-height:.5;display:block;margin-bottom:.4rem}
+.tcard-author{display:flex;align-items:center;gap:.65rem}
+.tcard-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:#fff}
+.tcard-name{font-size:.84rem;font-weight:600}
+.tcard-role{font-size:.75rem;color:var(--text3)}
+
+/* CTA */
+.cta-section{padding:6rem 2rem;text-align:center;position:relative;overflow:hidden}
+.cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(16,185,129,0.07),transparent);pointer-events:none}
+.cta-title{font-size:clamp(1.75rem,4vw,3rem);font-weight:900;letter-spacing:-.04em;margin-bottom:.75rem}
+.cta-sub{font-size:1rem;color:var(--text2);margin-bottom:2.25rem;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.65}
+
+/* FOOTER */
+footer{padding:2rem;border-top:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+.footer-brand{display:flex;align-items:center;gap:.5rem;font-size:.88rem;font-weight:600;color:var(--text2)}
+.footer-note{font-size:.78rem;color:var(--text3)}
+
+/* ═══════════════════════════════════════════════════
+   AUTH MODAL
+═══════════════════════════════════════════════════ */
+.auth-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+.auth-modal-overlay.on{display:flex}
+.auth-modal{background:var(--g2);border:1px solid var(--border);border-radius:20px;padding:2.25rem;width:100%;max-width:400px;box-shadow:0 30px 80px rgba(0,0,0,.6),var(--glow);position:relative;animation:scaleIn .25s ease}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.auth-modal-close{position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.06);border:none;color:var(--text2);cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:background .2s}
+.auth-modal-close:hover{background:rgba(255,255,255,.12)}
+.alogo{display:flex;align-items:center;gap:.6rem;justify-content:center;margin-bottom:1.5rem}
+.alogo-i{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 0 20px rgba(16,185,129,.3)}
+.alogo-n{font-size:1.15rem;font-weight:700;letter-spacing:-.02em}
+.atitle{font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:.3rem;letter-spacing:-.03em}
+.asub{font-size:.84rem;color:var(--text2);text-align:center;margin-bottom:1.5rem}
+.atabs{display:flex;background:var(--g3);border-radius:var(--r3);padding:3px;margin-bottom:1.35rem;gap:3px}
+.atab{flex:1;padding:.5rem;border:none;border-radius:6px;background:none;color:var(--text3);font-family:var(--font);font-size:.83rem;font-weight:500;cursor:pointer;transition:all .2s}
+.atab.on{background:var(--g4);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4)}
 .afield{margin-bottom:.9rem}
-.afield label{display:block;font-size:.76rem;font-weight:500;color:var(--text2);margin-bottom:.35rem}
-.afield input{width:100%;padding:.65rem .85rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:.87rem;outline:none;transition:border-color .2s,box-shadow .2s}
-.afield input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-pale)}
+.afield label{display:block;font-size:.75rem;font-weight:500;color:var(--text2);margin-bottom:.35rem}
+.afield input{width:100%;padding:.68rem .9rem;background:var(--g3);border:1px solid var(--border);border-radius:var(--r3);color:var(--text);font-family:var(--font);font-size:.88rem;outline:none;transition:border-color .2s,box-shadow .2s}
+.afield input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(16,185,129,.1)}
 .afield input::placeholder{color:var(--text3)}
-.abtn{width:100%;padding:.7rem;margin-top:.4rem;background:var(--accent);border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:.88rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s}
-.abtn:hover{background:var(--accent-h)}.abtn:active{transform:scale(.99)}.abtn:disabled{opacity:.5;cursor:not-allowed}
-.aerr{background:var(--danger-pale);border:1px solid rgba(239,68,68,.2);border-radius:var(--r2);padding:.55rem .85rem;font-size:.81rem;color:#fca5a5;margin-bottom:.9rem;display:none}
+.abtn{width:100%;padding:.75rem;margin-top:.4rem;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;border-radius:var(--r3);color:#fff;font-family:var(--font);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 0 25px rgba(16,185,129,.2)}
+.abtn:hover{box-shadow:0 0 35px rgba(16,185,129,.35)}.abtn:active{transform:scale(.99)}.abtn:disabled{opacity:.5;cursor:not-allowed}
+.aerr{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);border-radius:var(--r3);padding:.55rem .85rem;font-size:.81rem;color:#fca5a5;margin-bottom:.9rem;display:none}
 
-/* ── APP ───────────────────────────────────────────────────────── */
-#app{display:none;height:100dvh;width:100%;overflow:hidden}
-#app.on{display:flex;flex-direction:column}
+/* ═══════════════════════════════════════════════════
+   FULL APP
+═══════════════════════════════════════════════════ */
+#app-screen{display:none;height:100vh;height:100dvh;flex-direction:column;overflow:hidden}
+#app-screen.on{display:flex}
 
-/* ── DESKTOP LAYOUT ────────────────────────────────────────────── */
-.d-layout{display:flex;height:100%;width:100%;overflow:hidden}
-
-/* Sidebar (desktop only) */
-.sb{width:var(--sw);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;height:100%;overflow:hidden}
-.sb-top{padding:1rem .75rem .5rem;flex-shrink:0}
-.sb-brand{display:flex;align-items:center;gap:.55rem;padding:.45rem .55rem;margin-bottom:.45rem}
-.sb-brand-i{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
-.sb-brand-n{font-size:.92rem;font-weight:600;letter-spacing:-.02em}
-.ncbtn{display:flex;align-items:center;gap:.55rem;width:100%;padding:.55rem .7rem;background:none;border:1px solid var(--border);border-radius:var(--r2);color:var(--text2);font-family:var(--font);font-size:.82rem;cursor:pointer;transition:all .2s;text-align:left}
-.ncbtn:hover{background:var(--surface);color:var(--text);border-color:var(--accent-b)}
-.sb-nav{padding:.45rem .75rem;flex-shrink:0}
-.slbl{font-size:.65rem;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:.32rem .55rem;margin-top:.2rem}
-.ni{display:flex;align-items:center;gap:.55rem;width:100%;padding:.45rem .55rem;background:none;border:none;border-radius:var(--r2);color:var(--text2);font-family:var(--font);font-size:.82rem;cursor:pointer;transition:all .15s;text-align:left}
-.ni:hover{background:rgba(255,255,255,.06);color:var(--text)}.ni.on{background:rgba(255,255,255,.08);color:var(--text)}
-.ni svg{width:15px;height:15px;flex-shrink:0;opacity:.6}.ni.on svg{opacity:1}
-.sb-sess{flex:1;overflow-y:auto;padding:.2rem .75rem .7rem}
-.slbl2{font-size:.65rem;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:.32rem .55rem .18rem}
-.sitem{padding:.4rem .55rem;border-radius:var(--r2);cursor:pointer;transition:background .15s;margin-bottom:1px;border:1px solid transparent}
-.sitem:hover{background:rgba(255,255,255,.06)}.sitem.on{background:rgba(255,255,255,.08);border-color:var(--border2)}
-.stitle{font-size:.79rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sitem.on .stitle{color:var(--text)}
-.smeta{font-size:.67rem;color:var(--text3);margin-top:.1rem}
-.sb-foot{padding:.7rem;border-top:1px solid var(--border2);flex-shrink:0}
-.urow{display:flex;align-items:center;gap:.55rem;padding:.45rem .55rem;border-radius:var(--r2);cursor:pointer;transition:background .15s}
-.urow:hover{background:rgba(255,255,255,.06)}
-.uav{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:600;flex-shrink:0}
-.unm{font-size:.82rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lout{background:none;border:none;color:var(--text3);cursor:pointer;padding:.2rem;transition:color .2s;flex-shrink:0}
-.lout:hover{color:var(--danger)}
-
-/* Main area (desktop) */
-.d-main{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;min-width:0}
-
-/* ── MOBILE LAYOUT ─────────────────────────────────────────────── */
-/* Mobile top bar */
-.m-topbar{display:none;align-items:center;padding:.6rem .9rem;background:#fff;border-bottom:1px solid #e5e5e5;flex-shrink:0;gap:.75rem}
-.m-menu-btn{background:none;border:none;cursor:pointer;padding:.25rem;color:#1c1c1e;display:flex;align-items:center}
-.m-title{font-size:.97rem;font-weight:600;color:#1c1c1e;flex:1;letter-spacing:-.02em}
-.m-title-icon{font-size:.85rem;margin-right:.3rem}
+/* Mobile topbar */
+.m-top{display:none;align-items:center;padding:.65rem 1rem;background:var(--g1);border-bottom:1px solid var(--border2);flex-shrink:0;gap:.75rem}
+.m-top-menu{background:none;border:none;cursor:pointer;padding:.2rem;color:var(--text2);display:flex;align-items:center;flex-shrink:0}
+.m-top-title{font-size:.9rem;font-weight:600;flex:1;letter-spacing:-.02em}
+.m-top-new{background:none;border:none;cursor:pointer;color:var(--text2);display:flex;align-items:center;padding:.2rem;flex-shrink:0}
 
 /* Mobile drawer overlay */
-.m-drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200}
-.m-drawer-overlay.on{display:block}
+.m-dov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200}
+.m-dov.on{display:block}
 
-/* Mobile drawer (slides from left) */
-.m-drawer{
-  position:fixed;top:0;left:-100%;bottom:0;
-  width:80%;max-width:300px;
-  background:#fff;
-  z-index:201;
-  display:flex;flex-direction:column;
-  transition:left .25s ease;
-  box-shadow:4px 0 20px rgba(0,0,0,.15);
-}
+/* Mobile drawer */
+.m-drawer{position:fixed;top:0;left:-100%;bottom:0;width:78%;max-width:290px;background:var(--g2);z-index:201;display:flex;flex-direction:column;transition:left .28s cubic-bezier(.4,0,.2,1);border-right:1px solid var(--border)}
 .m-drawer.open{left:0}
-.m-drawer-top{padding:1.1rem 1rem .75rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
-.m-drawer-brand{display:flex;align-items:center;gap:.5rem}
-.m-drawer-brand-i{width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.78rem}
-.m-drawer-brand-n{font-size:1rem;font-weight:700;color:#1c1c1e;letter-spacing:-.02em}
-.m-drawer-close{background:none;border:none;cursor:pointer;color:#8e8e93;font-size:1.2rem;padding:.2rem}
-.m-drawer-nchat{display:flex;align-items:center;gap:.6rem;margin:.75rem 1rem .5rem;padding:.6rem .85rem;background:#f2f2f7;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);font-size:.87rem;font-weight:500;color:#1c1c1e;transition:background .15s;text-align:left;width:calc(100% - 2rem)}
-.m-drawer-nchat:hover{background:#e5e5ea}
-.m-drawer-nav{padding:.25rem 1rem;border-bottom:1px solid #f0f0f0;padding-bottom:.75rem}
-.m-drawer-ni{display:flex;align-items:center;gap:.65rem;width:100%;padding:.55rem .6rem;background:none;border:none;border-radius:8px;color:#3c3c43;font-family:var(--font);font-size:.88rem;cursor:pointer;transition:background .15s;text-align:left}
-.m-drawer-ni:hover{background:#f2f2f7}
-.m-drawer-ni.on{background:#f2f2f7;color:var(--accent);font-weight:500}
-.m-drawer-ni svg{width:17px;height:17px;flex-shrink:0;opacity:.7}
-.m-drawer-ni.on svg{opacity:1}
-.m-drawer-sess-label{font-size:.72rem;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:.07em;padding:.65rem 1rem .3rem}
-.m-drawer-sess{flex:1;overflow-y:auto;padding:0 1rem .75rem}
-.m-sitem{padding:.5rem .6rem;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:2px}
-.m-sitem:hover{background:#f2f2f7}.m-sitem.on{background:#f2f2f7}
-.m-stitle{font-size:.84rem;color:#1c1c1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400}
-.m-sitem.on .m-stitle{font-weight:500;color:var(--accent)}
-.m-smeta{font-size:.7rem;color:#8e8e93;margin-top:.1rem}
-.m-drawer-foot{padding:.75rem 1rem;border-top:1px solid #f0f0f0}
-.m-urow{display:flex;align-items:center;gap:.6rem;padding:.4rem .55rem;border-radius:8px;cursor:pointer;transition:background .15s}
-.m-urow:hover{background:#f2f2f7}
-.m-uav{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;flex-shrink:0}
-.m-unm{font-size:.85rem;color:#1c1c1e;flex:1;font-weight:500}
-.m-lout{background:none;border:none;color:#8e8e93;cursor:pointer;font-size:.8rem;padding:.2rem;transition:color .2s}
-.m-lout:hover{color:var(--danger)}
+.m-dr-top{padding:1rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.m-dr-brand{display:flex;align-items:center;gap:.5rem}
+.m-dr-brand-i{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:.78rem}
+.m-dr-brand-n{font-size:.95rem;font-weight:700;letter-spacing:-.02em}
+.m-dr-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:1.1rem;padding:.2rem}
+.m-dr-nchat{display:flex;align-items:center;gap:.6rem;margin:.7rem 1rem .4rem;padding:.58rem .8rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);border-radius:var(--r3);cursor:pointer;font-family:var(--font);font-size:.85rem;font-weight:600;color:var(--acc3);transition:all .2s;text-align:left;width:calc(100% - 2rem)}
+.m-dr-nchat:hover{background:rgba(16,185,129,.12)}
+.m-dr-nav{padding:.4rem 1rem;border-bottom:1px solid var(--border2);padding-bottom:.75rem}
+.m-dr-ni{display:flex;align-items:center;gap:.6rem;width:100%;padding:.5rem .6rem;background:none;border:none;border-radius:var(--r3);color:var(--text2);font-family:var(--font);font-size:.85rem;cursor:pointer;transition:all .15s;text-align:left}
+.m-dr-ni:hover{background:rgba(255,255,255,.05);color:var(--text)}.m-dr-ni.on{background:rgba(16,185,129,.08);color:var(--acc3)}
+.m-dr-ni svg{width:16px;height:16px;flex-shrink:0;opacity:.6}.m-dr-ni.on svg{opacity:1}
+.m-dr-sess-lbl{font-size:.65rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:.6rem 1rem .25rem}
+.m-dr-sess{flex:1;overflow-y:auto;padding:0 1rem .75rem}
+.m-si{padding:.45rem .55rem;border-radius:var(--r3);cursor:pointer;transition:background .15s;margin-bottom:1px}
+.m-si:hover{background:rgba(255,255,255,.05)}.m-si.on{background:rgba(16,185,129,.08)}
+.m-si-t{font-size:.8rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.m-si.on .m-si-t{color:var(--acc3)}
+.m-si-m{font-size:.68rem;color:var(--text3);margin-top:.1rem}
+.m-dr-foot{padding:.75rem 1rem;border-top:1px solid var(--border2)}
+.m-urow{display:flex;align-items:center;gap:.55rem;padding:.42rem .55rem;border-radius:var(--r3);cursor:pointer;transition:background .15s}
+.m-urow:hover{background:rgba(255,255,255,.05)}
+.m-uav{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:.77rem;font-weight:700;flex-shrink:0}
+.m-unm{font-size:.83rem;color:var(--text2);flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-lout{background:none;border:none;color:var(--text3);cursor:pointer;padding:.2rem;transition:color .2s;flex-shrink:0}
+.m-lout:hover{color:#f87171}
 
-/* Mobile content area */
-.m-content{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff;min-height:0}
+/* Desktop layout */
+.d-layout{display:flex;flex:1;overflow:hidden}
+.d-sb{width:255px;flex-shrink:0;background:var(--g2);border-right:1px solid var(--border2);display:flex;flex-direction:column;height:100%;overflow:hidden}
+.d-sb-top{padding:.9rem .7rem .4rem;flex-shrink:0}
+.d-brand{display:flex;align-items:center;gap:.55rem;padding:.42rem .55rem;margin-bottom:.4rem}
+.d-brand-i{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:.74rem;flex-shrink:0}
+.d-brand-n{font-size:.9rem;font-weight:700;letter-spacing:-.02em}
+.d-nchat{display:flex;align-items:center;gap:.55rem;width:100%;padding:.52rem .7rem;background:none;border:1px solid var(--border);border-radius:var(--r3);color:var(--text2);font-family:var(--font);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;text-align:left}
+.d-nchat:hover{background:rgba(255,255,255,.04);color:var(--text);border-color:rgba(16,185,129,.3)}
+.d-sb-nav{padding:.42rem .7rem;flex-shrink:0}
+.d-slbl{font-size:.63rem;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:.3rem .52rem;margin-top:.2rem}
+.d-ni{display:flex;align-items:center;gap:.55rem;width:100%;padding:.44rem .52rem;background:none;border:none;border-radius:var(--r3);color:var(--text2);font-family:var(--font);font-size:.82rem;cursor:pointer;transition:all .15s;text-align:left}
+.d-ni:hover{background:rgba(255,255,255,.05);color:var(--text)}.d-ni.on{background:rgba(16,185,129,.08);color:var(--acc3)}
+.d-ni svg{width:15px;height:15px;flex-shrink:0;opacity:.6}.d-ni.on svg{opacity:1}
+.d-sb-sess{flex:1;overflow-y:auto;padding:.2rem .7rem .7rem}
+.d-slbl2{font-size:.63rem;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;padding:.3rem .52rem .18rem}
+.d-si{padding:.38rem .52rem;border-radius:var(--r3);cursor:pointer;transition:background .15s;margin-bottom:1px;border:1px solid transparent}
+.d-si:hover{background:rgba(255,255,255,.05)}.d-si.on{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.1)}
+.d-si-t{font-size:.78rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.d-si.on .d-si-t{color:var(--acc3)}
+.d-si-m{font-size:.66rem;color:var(--text3);margin-top:.1rem}
+.d-sb-foot{padding:.7rem;border-top:1px solid var(--border2);flex-shrink:0}
+.d-urow{display:flex;align-items:center;gap:.52rem;padding:.42rem .52rem;border-radius:var(--r3);cursor:pointer;transition:background .15s}
+.d-urow:hover{background:rgba(255,255,255,.05)}
+.d-uav{width:27px;height:27px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
+.d-unm{font-size:.8rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.d-lout{background:none;border:none;color:var(--text3);cursor:pointer;padding:.2rem;transition:color .2s;flex-shrink:0}
+.d-lout:hover{color:#f87171}
 
-/* SHARED HEADER (desktop) */
-.hdr{padding:.75rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.7rem;flex-shrink:0;background:var(--bg)}
-.hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--accent-pale);flex-shrink:0}
-.hdr-title{font-size:.9rem;font-weight:500;flex:1;letter-spacing:-.01em}
-.hdr-right{font-size:.75rem;color:var(--text3)}
+/* Main content */
+.d-main{flex:1;display:flex;flex-direction:column;height:100%;overflow:hidden;min-width:0}
+.d-hdr{padding:.72rem 1.2rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:.7rem;flex-shrink:0}
+.d-hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 8px var(--acc);flex-shrink:0}
+.d-hdr-title{font-size:.88rem;font-weight:600;flex:1;letter-spacing:-.01em}
+.d-hdr-right{font-size:.74rem;color:var(--text3)}
 
 /* PAGES */
 .pg{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
 .pg.on{display:flex}
 
-/* ── CHAT ──────────────────────────────────────────────────────── */
-.msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:1.25rem 0}
-.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem 1.5rem;text-align:center}
-.w-icon{width:50px;height:50px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.35rem;margin-bottom:1.1rem}
-.w-title{font-size:1.55rem;font-weight:600;margin-bottom:.4rem;letter-spacing:-.03em}
-.w-sub{font-size:.88rem;color:var(--text3);line-height:1.65;max-width:320px}
-.mwrap{width:100%;max-width:740px;margin:0 auto;padding:.4rem 1.25rem}
-.mrow{display:flex;gap:.7rem;align-items:flex-start}
-.mrow.usr{flex-direction:row-reverse}
-.mav{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:600;flex-shrink:0;margin-top:2px}
-.mav.ai{background:var(--accent);color:#fff}.mav.usr{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
-.mcont{flex:1;min-width:0}
-.mname{font-size:.71rem;color:var(--text3);margin-bottom:.25rem;font-weight:500}
-.mrow.usr .mname{text-align:right}
-.mbub{font-size:.88rem;line-height:1.72;color:var(--text)}
-.mrow.usr .mbub{background:var(--surface);border:1px solid var(--border);border-radius:16px 3px 16px 16px;padding:.6rem .9rem;display:inline-block;float:right;clear:both;max-width:88%}
-.mrow.ai .mbub{padding:.2rem 0}
-.mtime{font-size:.66rem;color:var(--text3);margin-top:.25rem}
-.mrow.usr .mtime{text-align:right}
-.trow{display:flex;gap:.7rem;align-items:center;padding:.4rem 1.25rem;max-width:740px;margin:0 auto;width:100%}
-.tdots{display:flex;gap:4px}
-.tdots span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:td 1.4s infinite}
-.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
-@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
-.ebar{background:var(--danger-pale);border-top:1px solid rgba(239,68,68,.2);padding:.55rem 1.25rem;font-size:.8rem;color:#fca5a5;display:none;flex-shrink:0}
-.vbar{background:rgba(255,255,255,.03);border-top:1px solid var(--border2);padding:.5rem 1.25rem;font-size:.79rem;color:var(--text3);display:none;flex-shrink:0;align-items:center;justify-content:space-between}
-.vbar-btn{padding:.3rem .75rem;background:var(--accent);color:#fff;border:none;border-radius:6px;font-family:var(--font);font-size:.76rem;font-weight:500;cursor:pointer}
-.vbar-btn:hover{background:var(--accent-h)}
+/* ── CHAT ────────────────────────────────────────────── */
+.msgs-area{flex:1;overflow-y:auto;padding:1.5rem 0;display:flex;flex-direction:column}
+.welcome-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2.5rem 1.5rem;text-align:center}
+.ws-icon{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 1.25rem;box-shadow:0 0 30px rgba(16,185,129,.25)}
+.ws-title{font-size:1.65rem;font-weight:800;margin-bottom:.5rem;letter-spacing:-.04em}
+.ws-sub{font-size:.9rem;color:var(--text2);line-height:1.7;max-width:340px}
+.ws-prompts{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1.5rem;max-width:480px}
+.ws-prompt{padding:.5rem 1rem;background:var(--g3);border:1px solid var(--border);border-radius:20px;font-size:.8rem;color:var(--text2);cursor:pointer;transition:all .2s;font-family:var(--font)}
+.ws-prompt:hover{border-color:rgba(16,185,129,.3);color:var(--acc3);background:rgba(16,185,129,.06)}
+.msg-wrap{width:100%;max-width:760px;margin:0 auto;padding:.4rem 1.5rem}
+.msg-row{display:flex;gap:.75rem;align-items:flex-start}
+.msg-row.usr{flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:3px}
+.msg-av.ai{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;box-shadow:0 0 12px rgba(16,185,129,.2)}
+.msg-av.usr{background:var(--g4);color:var(--text2);border:1px solid var(--border)}
+.msg-body{flex:1;min-width:0}
+.msg-name{font-size:.7rem;color:var(--text3);margin-bottom:.25rem;font-weight:500}
+.msg-row.usr .msg-name{text-align:right}
+.msg-bub{font-size:.9rem;line-height:1.72;color:var(--text)}
+.msg-row.usr .msg-bub{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(5,150,105,.08));border:1px solid rgba(16,185,129,.15);border-radius:16px 3px 16px 16px;padding:.65rem 1rem;display:inline-block;float:right;clear:both;max-width:88%}
+.msg-row.ai .msg-bub{padding:.2rem 0}
+.msg-time{font-size:.65rem;color:var(--text3);margin-top:.25rem}
+.msg-row.usr .msg-time{text-align:right}
+.t-row{display:flex;gap:.75rem;align-items:center;padding:.4rem 1.5rem;max-width:760px;margin:0 auto;width:100%}
+.t-dots{display:flex;gap:4px}
+.t-dots span{width:5px;height:5px;border-radius:50%;background:var(--acc3);animation:td 1.4s infinite}
+.t-dots span:nth-child(2){animation-delay:.2s}.t-dots span:nth-child(3){animation-delay:.4s}
+.ebar{background:rgba(239,68,68,.08);border-top:1px solid rgba(239,68,68,.15);padding:.6rem 1.5rem;font-size:.8rem;color:#fca5a5;display:none;flex-shrink:0}
+.vbar{background:rgba(255,255,255,.02);border-top:1px solid var(--border2);padding:.5rem 1.5rem;font-size:.79rem;color:var(--text3);display:none;flex-shrink:0;align-items:center;justify-content:space-between}
+.vbar-btn{padding:.3rem .8rem;background:var(--acc);color:#fff;border:none;border-radius:6px;font-family:var(--font);font-size:.76rem;font-weight:600;cursor:pointer}
+.vbar-btn:hover{background:var(--acc2)}
 
-/* Desktop input */
-.iarea{padding:.65rem 1.25rem .9rem;flex-shrink:0;background:var(--bg)}
-.ibox{max-width:740px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;position:relative;transition:border-color .2s}
-.ibox:focus-within{border-color:rgba(255,255,255,.2)}
-.cinput{width:100%;padding:.78rem 3.2rem .78rem .95rem;background:none;border:none;color:var(--text);font-family:var(--font);font-size:.88rem;resize:none;outline:none;min-height:48px;max-height:180px;line-height:1.55}
-.cinput::placeholder{color:var(--text3)}
-.sbtn{position:absolute;right:.45rem;bottom:.45rem;width:32px;height:32px;border-radius:8px;background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .1s}
-.sbtn:hover{background:var(--accent-h)}.sbtn:active{transform:scale(.93)}.sbtn:disabled{background:var(--bg3);cursor:not-allowed}
-.sbtn svg{width:14px;height:14px}
-.ifooter{text-align:center;font-size:.68rem;color:var(--text3);margin-top:.4rem;max-width:740px;margin-left:auto;margin-right:auto}
+/* Input area */
+.iarea{padding:.75rem 1.5rem 1.1rem;flex-shrink:0;background:var(--g1)}
+.ibox{max-width:760px;margin:0 auto;background:var(--g3);border:1px solid var(--border);border-radius:16px;position:relative;transition:border-color .2s,box-shadow .2s}
+.ibox:focus-within{border-color:rgba(16,185,129,.3);box-shadow:0 0 20px rgba(16,185,129,.07)}
+.ci{width:100%;padding:.85rem 3.5rem .85rem 1.1rem;background:none;border:none;color:var(--text);font-family:var(--font);font-size:.9rem;resize:none;outline:none;min-height:52px;max-height:180px;line-height:1.55}
+.ci::placeholder{color:var(--text3)}
+.sbtn{position:absolute;right:.5rem;bottom:.5rem;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 0 15px rgba(16,185,129,.2)}
+.sbtn:hover{box-shadow:0 0 25px rgba(16,185,129,.35)}.sbtn:active{transform:scale(.92)}.sbtn:disabled{background:var(--g4);box-shadow:none;cursor:not-allowed}
+.sbtn svg{width:15px;height:15px}
+.ifooter{text-align:center;font-size:.68rem;color:var(--text3);margin-top:.45rem;max-width:760px;margin-left:auto;margin-right:auto}
 
-/* Mobile input (ChatGPT style) */
-.m-iarea{padding:.6rem .85rem calc(.6rem + env(safe-area-inset-bottom,0));flex-shrink:0;background:#fff;border-top:1px solid #e5e5e5}
-.m-ibox{display:flex;align-items:flex-end;gap:.5rem;background:#f2f2f7;border:none;border-radius:24px;padding:.55rem .55rem .55rem .95rem}
-.m-cinput{flex:1;background:none;border:none;color:#1c1c1e;font-family:var(--font);font-size:.95rem;resize:none;outline:none;min-height:28px;max-height:120px;line-height:1.5;padding:.1rem 0}
-.m-cinput::placeholder{color:#8e8e93}
-.m-sbtn{width:34px;height:34px;border-radius:50%;background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,transform .1s}
-.m-sbtn:hover{background:var(--accent-h)}.m-sbtn:active{transform:scale(.92)}.m-sbtn:disabled{background:#c7c7cc;cursor:not-allowed}
-.m-sbtn svg{width:15px;height:15px}
-.m-ifooter{text-align:center;font-size:.66rem;color:#8e8e93;margin-top:.4rem;padding:0 .5rem}
-
-/* Mobile chat specific */
-.m-msgs{flex:1;overflow-y:auto;background:#fff;display:flex;flex-direction:column;padding:.75rem 0}
-.m-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem 1.5rem;text-align:center;background:#fff}
-.m-w-title{font-size:1.6rem;font-weight:700;color:#1c1c1e;margin-bottom:.5rem;letter-spacing:-.03em}
-.m-w-sub{font-size:.9rem;color:#8e8e93;line-height:1.6;max-width:280px}
-.m-mwrap{width:100%;padding:.35rem .9rem}
-.m-mrow{display:flex;gap:.6rem;align-items:flex-start}
-.m-mrow.usr{flex-direction:row-reverse}
-.m-mav{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;flex-shrink:0;margin-top:2px}
-.m-mav.ai{background:var(--accent);color:#fff}
-.m-mav.usr{background:#e5e5ea;color:#3c3c43}
-.m-mcont{flex:1;min-width:0}
-.m-mname{font-size:.7rem;color:#8e8e93;margin-bottom:.22rem;font-weight:500}
-.m-mrow.usr .m-mname{text-align:right}
-.m-mbub{font-size:.9rem;line-height:1.68;color:#1c1c1e}
-.m-mrow.usr .m-mbub{background:#e5e5ea;border-radius:16px 3px 16px 16px;padding:.58rem .88rem;display:inline-block;float:right;clear:both;max-width:88%;color:#1c1c1e}
-.m-mrow.ai .m-mbub{padding:.2rem 0}
-.m-mtime{font-size:.65rem;color:#8e8e93;margin-top:.22rem}
-.m-mrow.usr .m-mtime{text-align:right}
-.m-trow{display:flex;gap:.6rem;align-items:center;padding:.35rem .9rem;width:100%}
-.m-tdots{display:flex;gap:3px}
-.m-tdots span{width:5px;height:5px;border-radius:50%;background:#8e8e93;animation:td 1.4s infinite}
-.m-tdots span:nth-child(2){animation-delay:.2s}.m-tdots span:nth-child(3){animation-delay:.4s}
-.m-ebar{background:#fff0f0;border-top:1px solid #ffcdd2;padding:.5rem .9rem;font-size:.79rem;color:#c62828;display:none;flex-shrink:0}
-.m-vbar{background:#f9f9f9;border-top:1px solid #e5e5e5;padding:.5rem .9rem;font-size:.79rem;color:#8e8e93;display:none;flex-shrink:0;align-items:center;justify-content:space-between}
-.m-vbar-btn{padding:.3rem .75rem;background:var(--accent);color:#fff;border:none;border-radius:6px;font-family:var(--font);font-size:.76rem;font-weight:500;cursor:pointer}
-
-/* Scroll pages (shared) */
-.spg{flex:1;overflow-y:auto;padding:1.25rem}
-.spin{max-width:740px;margin:0 auto}
-.ptitle{font-size:1.35rem;font-weight:600;margin-bottom:1.1rem;letter-spacing:-.03em}
-
-/* Mobile scroll pages */
-.m-spg{flex:1;overflow-y:auto;padding:1rem;background:#fff}
-.m-spin{max-width:100%}
-.m-ptitle{font-size:1.25rem;font-weight:700;color:#1c1c1e;margin-bottom:1rem;letter-spacing:-.03em}
+/* SCROLL PAGES */
+.spg{flex:1;overflow-y:auto;padding:1.5rem}
+.spin{max-width:760px;margin:0 auto}
+.ptitle{font-size:1.35rem;font-weight:800;margin-bottom:1.1rem;letter-spacing:-.03em}
 
 /* HISTORY */
-.hitem{display:flex;gap:.7rem;padding:.85rem 0;border-bottom:1px solid var(--border2)}
-.hitem:last-child{border-bottom:none}
-.hav{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;flex-shrink:0;margin-top:2px}
-.hav.ai{background:var(--accent);color:#fff}.hav.usr{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
-.hbody{flex:1}.hrole{font-size:.7rem;color:var(--text3);font-weight:600;text-transform:capitalize;margin-bottom:.25rem}
-.htxt{font-size:.85rem;color:var(--text2);line-height:1.62}.htime{font-size:.66rem;color:var(--text3);margin-top:.25rem}
-/* Mobile history */
-.m-hitem{display:flex;gap:.65rem;padding:.8rem 0;border-bottom:1px solid #f0f0f0}
-.m-hitem:last-child{border-bottom:none}
-.m-hav{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;flex-shrink:0;margin-top:2px}
-.m-hav.ai{background:var(--accent);color:#fff}.m-hav.usr{background:#e5e5ea;color:#3c3c43}
-.m-hbody{flex:1}.m-hrole{font-size:.7rem;color:#8e8e93;font-weight:600;text-transform:capitalize;margin-bottom:.22rem}
-.m-htxt{font-size:.87rem;color:#1c1c1e;line-height:1.62}.m-htime{font-size:.66rem;color:#8e8e93;margin-top:.22rem}
+.h-item{display:flex;gap:.75rem;padding:.9rem 0;border-bottom:1px solid var(--border2)}
+.h-item:last-child{border-bottom:none}
+.h-av{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:2px}
+.h-av.ai{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
+.h-av.usr{background:var(--g4);color:var(--text2);border:1px solid var(--border)}
+.h-body{flex:1}.h-role{font-size:.7rem;color:var(--text3);font-weight:600;text-transform:capitalize;margin-bottom:.25rem}
+.h-txt{font-size:.86rem;color:var(--text2);line-height:1.65}.h-time{font-size:.66rem;color:var(--text3);margin-top:.25rem}
 
-/* MOOD - desktop */
-.mgrid{display:flex;gap:.5rem;margin-bottom:1.1rem;flex-wrap:wrap}
-.mbtn{flex:1;min-width:65px;padding:.78rem .4rem;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font)}
-.mbtn:hover{border-color:rgba(255,255,255,.2);transform:translateY(-1px)}.mbtn.sel{border-color:var(--accent);background:var(--accent-pale)}
-.moji{font-size:1.65rem;display:block;margin-bottom:.25rem}
-.mlbl{font-size:.72rem;color:var(--text2);font-weight:500}.mbtn.sel .mlbl{color:var(--accent)}
-.mnote{width:100%;padding:.68rem .9rem;margin-bottom:.9rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:.85rem;resize:none;outline:none;height:75px;transition:border-color .2s}
-.mnote:focus{border-color:var(--accent-b)}.mnote::placeholder{color:var(--text3)}
-.savebtn{padding:.6rem 1.3rem;background:var(--accent);color:#fff;border:none;border-radius:var(--r2);font-family:var(--font);font-size:.85rem;font-weight:600;cursor:pointer;transition:background .2s;margin-bottom:1.75rem}
-.savebtn:hover{background:var(--accent-h)}.savebtn:disabled{opacity:.5;cursor:not-allowed}
-.slbl3{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.68rem}
-.ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem;margin-bottom:1.1rem}
-.mlog{display:flex;align-items:center;gap:.68rem;padding:.68rem .9rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:.4rem}
-.mlog-e{font-size:1.4rem;flex-shrink:0}.mlog-i{flex:1}
-.mlog-n{font-size:.85rem;font-weight:500}.mlog-m{font-size:.7rem;color:var(--text3);margin-top:.1rem}
-.mlog-b{background:var(--accent-pale);color:var(--accent);border:1px solid var(--accent-b);border-radius:20px;padding:.13rem .55rem;font-size:.7rem;font-weight:600}
-/* Mobile mood */
-.m-mgrid{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
-.m-mbtn{flex:1;min-width:58px;padding:.75rem .35rem;background:#f2f2f7;border:2px solid #e5e5ea;border-radius:12px;cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font)}
-.m-mbtn:hover{border-color:var(--accent)}.m-mbtn.sel{border-color:var(--accent);background:#e8f8f3}
-.m-moji{font-size:1.55rem;display:block;margin-bottom:.22rem}
-.m-mlbl{font-size:.7rem;color:#3c3c43;font-weight:500}.m-mbtn.sel .m-mlbl{color:var(--accent)}
-.m-mnote{width:100%;padding:.65rem .85rem;margin-bottom:.85rem;background:#f2f2f7;border:1.5px solid #e5e5ea;border-radius:10px;color:#1c1c1e;font-family:var(--font);font-size:.88rem;resize:none;outline:none;height:72px;transition:border-color .2s}
-.m-mnote:focus{border-color:var(--accent)}.m-mnote::placeholder{color:#8e8e93}
-.m-savebtn{padding:.62rem 1.3rem;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:var(--font);font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:1.5rem}
-.m-slbl{font-size:.72rem;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.65rem}
-.m-ccard{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:12px;padding:1rem;margin-bottom:1rem}
-.m-mlog{display:flex;align-items:center;gap:.65rem;padding:.65rem .85rem;background:#f9f9f9;border:1px solid #e5e5e5;border-radius:10px;margin-bottom:.38rem}
-.m-mlog-e{font-size:1.35rem;flex-shrink:0}.m-mlog-i{flex:1}
-.m-mlog-n{font-size:.87rem;font-weight:500;color:#1c1c1e}.m-mlog-m{font-size:.7rem;color:#8e8e93;margin-top:.1rem}
-.m-mlog-b{background:#e8f8f3;color:var(--accent);border:1px solid var(--accent-b);border-radius:20px;padding:.13rem .55rem;font-size:.7rem;font-weight:600}
+/* MOOD */
+.mood-grid{display:flex;gap:.55rem;margin-bottom:1.1rem;flex-wrap:wrap}
+.m-btn{flex:1;min-width:68px;padding:.82rem .4rem;background:var(--g3);border:1.5px solid var(--border);border-radius:var(--r2);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font)}
+.m-btn:hover{border-color:rgba(16,185,129,.25);transform:translateY(-1px)}.m-btn.sel{border-color:var(--acc);background:rgba(16,185,129,.07)}
+.m-emoji{font-size:1.7rem;display:block;margin-bottom:.28rem}
+.m-lbl{font-size:.73rem;color:var(--text2);font-weight:500}.m-btn.sel .m-lbl{color:var(--acc3)}
+.m-note{width:100%;padding:.7rem .95rem;margin-bottom:1rem;background:var(--g3);border:1px solid var(--border);border-radius:var(--r3);color:var(--text);font-family:var(--font);font-size:.86rem;resize:none;outline:none;height:78px;transition:border-color .2s}
+.m-note:focus{border-color:rgba(16,185,129,.3)}.m-note::placeholder{color:var(--text3)}
+.m-savebtn{padding:.62rem 1.4rem;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;border-radius:var(--r3);font-family:var(--font);font-size:.86rem;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:1.75rem;box-shadow:0 0 20px rgba(16,185,129,.15)}
+.m-savebtn:hover{box-shadow:0 0 30px rgba(16,185,129,.3)}.m-savebtn:disabled{opacity:.5;cursor:not-allowed}
+.m-slbl{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.7rem}
+.m-ccard{background:var(--g3);border:1px solid var(--border);border-radius:var(--r2);padding:1.15rem;margin-bottom:1.15rem}
+.m-log{display:flex;align-items:center;gap:.7rem;padding:.7rem .95rem;background:var(--g3);border:1px solid var(--border);border-radius:var(--r3);margin-bottom:.42rem}
+.ml-e{font-size:1.45rem;flex-shrink:0}.ml-i{flex:1}
+.ml-n{font-size:.86rem;font-weight:500}.ml-m{font-size:.71rem;color:var(--text3);margin-top:.1rem}
+.ml-b{background:rgba(16,185,129,.08);color:var(--acc3);border:1px solid rgba(16,185,129,.15);border-radius:20px;padding:.14rem .58rem;font-size:.71rem;font-weight:600}
 
-/* EXERCISES - desktop */
-.egrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:.8rem}
-.ecard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.15rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.ecard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:.5}
-.ecard:hover{border-color:rgba(255,255,255,.18);background:var(--surface2);transform:translateY(-2px);box-shadow:var(--sh2)}
-.ecard:hover::before{opacity:1}
-.eemoji{font-size:1.65rem;margin-bottom:.68rem}.ename{font-size:.94rem;font-weight:600;margin-bottom:.35rem;letter-spacing:-.02em}
-.edesc{font-size:.79rem;color:var(--text3);line-height:1.58;margin-bottom:.78rem}
-.etags{display:flex;gap:.3rem;flex-wrap:wrap}
-.etag{font-size:.66rem;background:rgba(255,255,255,.07);color:var(--text3);border-radius:20px;padding:.13rem .5rem}
-.edur{font-size:.7rem;color:var(--text3);margin-top:.45rem}
-/* Mobile exercises */
-.m-egrid{display:flex;flex-direction:column;gap:.65rem}
-.m-ecard{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:14px;padding:1.1rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.m-ecard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);opacity:.7}
-.m-ecard:active{background:#f0f0f0}
-.m-eemoji{font-size:1.6rem;margin-bottom:.65rem}.m-ename{font-size:.96rem;font-weight:600;color:#1c1c1e;margin-bottom:.32rem}
-.m-edesc{font-size:.82rem;color:#8e8e93;line-height:1.58;margin-bottom:.75rem}
-.m-etags{display:flex;gap:.3rem;flex-wrap:wrap}
-.m-etag{font-size:.67rem;background:#e5e5ea;color:#3c3c43;border-radius:20px;padding:.13rem .5rem}
-.m-edur{font-size:.7rem;color:#8e8e93;margin-top:.42rem}
+/* EXERCISES */
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.9rem}
+.ex-card{background:var(--g3);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.ex-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--acc2));opacity:.5}
+.ex-card:hover{border-color:rgba(16,185,129,.2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3),0 0 20px rgba(16,185,129,.06)}
+.ex-card:hover::before{opacity:1}
+.ex-emoji{font-size:1.65rem;margin-bottom:.68rem}.ex-name{font-size:.94rem;font-weight:700;margin-bottom:.35rem;letter-spacing:-.02em}
+.ex-desc{font-size:.79rem;color:var(--text2);line-height:1.6;margin-bottom:.78rem}
+.ex-tags{display:flex;gap:.3rem;flex-wrap:wrap}
+.ex-tag{font-size:.66rem;background:rgba(255,255,255,.05);color:var(--text3);border-radius:20px;padding:.12rem .5rem}
+.ex-dur{font-size:.7rem;color:var(--text3);margin-top:.45rem}
 
 /* MODAL */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:300;padding:0}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;z-index:300;padding:0}
 .ov.on{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;position:relative}
-.mcls{position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.1);border:none;color:var(--text3);cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s}
-.mcls:hover{background:rgba(255,255,255,.18)}
-.memo{font-size:1.9rem;margin-bottom:.55rem}.mtitle{font-size:1.15rem;font-weight:600;margin-bottom:.25rem;letter-spacing:-.02em}
-.mdesc{font-size:.83rem;color:var(--text3);margin-bottom:1.1rem;line-height:1.58}
-.steps{display:flex;flex-direction:column;gap:.78rem;margin-bottom:1.35rem}
-.step{display:flex;gap:.68rem}
-.snum{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;flex-shrink:0;margin-top:2px}
-.sbody{flex:1}.stitle2{font-size:.85rem;font-weight:600;margin-bottom:.17rem}.stext{font-size:.79rem;color:var(--text3);line-height:1.58}
+.modal{background:var(--g2);border:1px solid var(--border);border-top:1px solid rgba(16,185,129,.15);border-radius:20px 20px 0 0;padding:1.65rem;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;position:relative;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mcls{position:absolute;top:.9rem;right:.9rem;background:rgba(255,255,255,.06);border:none;color:var(--text3);cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.mcls:hover{background:rgba(255,255,255,.12)}
+.m-emo{font-size:1.85rem;margin-bottom:.5rem}.m-ttl{font-size:1.15rem;font-weight:700;margin-bottom:.25rem;letter-spacing:-.02em}
+.m-dsc{font-size:.82rem;color:var(--text2);margin-bottom:1.1rem;line-height:1.6}
+.msteps{display:flex;flex-direction:column;gap:.78rem;margin-bottom:1.35rem}
+.mstep{display:flex;gap:.68rem}
+.msnum{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:2px}
+.msbody{flex:1}.mst{font-size:.85rem;font-weight:600;margin-bottom:.17rem}.msd{font-size:.79rem;color:var(--text2);line-height:1.6}
 .mbtns{display:flex;gap:.5rem}
-.mbtn2{padding:.55rem 1.1rem;border-radius:var(--r2);font-family:var(--font);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s}
-.mbtn2.p{background:var(--accent);color:#fff;border:none}.mbtn2.p:hover{background:var(--accent-h)}
-.mbtn2.s{background:none;color:var(--text2);border:1px solid var(--border)}.mbtn2.s:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
+.mbtn2{padding:.55rem 1.15rem;border-radius:var(--r3);font-family:var(--font);font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s}
+.mbtn2.p{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;box-shadow:0 0 18px rgba(16,185,129,.2)}
+.mbtn2.p:hover{box-shadow:0 0 28px rgba(16,185,129,.35)}
+.mbtn2.s{background:none;color:var(--text2);border:1px solid var(--border)}.mbtn2.s:hover{border-color:rgba(255,255,255,.18);color:var(--text)}
 .bwrap{text-align:center;padding:1rem 0;margin-bottom:.85rem}
-.bcirc{width:100px;height:100px;border-radius:50%;border:2px solid rgba(16,163,127,.4);background:rgba(16,163,127,.1);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:500;color:var(--accent);margin:0 auto .65rem;transition:all .65s ease}
-.bcnt{font-size:1.8rem;font-weight:600;height:2.3rem;margin-bottom:.2rem}.blbl{font-size:.82rem;color:var(--text3);height:1.2rem;margin-bottom:.78rem}
+.bcirc{width:100px;height:100px;border-radius:50%;border:2px solid rgba(16,185,129,.35);background:rgba(16,185,129,.07);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;color:var(--acc3);margin:0 auto .65rem;transition:all .65s ease}
+.bcnt{font-size:1.8rem;font-weight:700;height:2.3rem;margin-bottom:.2rem}.blbl{font-size:.82rem;color:var(--text3);height:1.2rem;margin-bottom:.75rem}
 .twrap{text-align:center;padding:.65rem 0;margin-bottom:.85rem}
 .tsvg{width:110px;height:110px;display:block;margin:0 auto .65rem}
-.tbg{fill:none;stroke:var(--bg3);stroke-width:6}.tprog{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .1s}
-.ttxt{font-size:1.5rem;font-weight:600;fill:var(--text);dominant-baseline:middle;text-anchor:middle}
+.tbg{fill:none;stroke:var(--g4);stroke-width:6}
+.tprog{fill:none;stroke:url(#tg);stroke-width:6;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .1s}
+.ttxt{font-size:1.5rem;font-weight:700;fill:var(--text);dominant-baseline:middle;text-anchor:middle}
 
-/* EMPTY STATE */
-.empty{text-align:center;padding:2.5rem 1rem;color:var(--text3);font-size:.87rem}
+/* EMPTY */
+.empty-s{text-align:center;padding:2.5rem 1rem;color:var(--text3);font-size:.87rem}
 .empty-i{font-size:2.1rem;margin-bottom:.6rem;opacity:.4}
-.m-empty{text-align:center;padding:2.5rem 1rem;color:#8e8e93;font-size:.87rem}
-.m-empty-i{font-size:2.1rem;margin-bottom:.6rem;opacity:.5}
 
 /* TOAST */
-.toast{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%) translateY(8px);background:rgba(28,28,30,.9);color:#fff;padding:.55rem 1.1rem;border-radius:20px;font-size:.8rem;box-shadow:var(--sh);opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(8px);background:var(--g3);border:1px solid var(--border);color:var(--text);padding:.58rem 1.15rem;border-radius:20px;font-size:.8rem;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ── RESPONSIVE ────────────────────────────────────────────────── */
+/* RESPONSIVE */
 @media(min-width:769px){
-  .m-topbar,.m-drawer,.m-drawer-overlay,.m-content{display:none!important}
+  .m-top,.m-drawer,.m-dov{display:none!important}
   .d-layout{display:flex!important}
 }
 @media(max-width:768px){
   .d-layout{display:none!important}
-  #app.on{flex-direction:column}
-  .m-topbar{display:flex!important}
-  .m-content{display:flex!important;flex-direction:column;flex:1;overflow:hidden;min-height:0}
-  /* Auth on mobile */
-  .abox{padding:1.75rem 1.25rem;border-radius:16px}
+  .m-top{display:flex!important}
+  #app-screen.on{flex-direction:column}
+  .msgs-area{padding:.75rem 0}
+  .msg-wrap{padding:.35rem .85rem}
+  .iarea{padding:.5rem .75rem .65rem}
+  .spg{padding:.85rem}
+  .ex-grid{grid-template-columns:1fr}
+  .ws-prompts{display:none}
+  .modal{max-width:100%}
+  .nav{padding:.75rem 1.25rem}
+  .nav-login{padding:.42rem .85rem;font-size:.8rem}
+  .nav-signup{padding:.42rem .85rem;font-size:.8rem}
+  .hero{padding:5.5rem 1.25rem 3rem}
+  .features-grid{grid-template-columns:1fr}
+  .demo-container{grid-template-columns:1fr}
+  .demo-text{order:2}.demo-preview{order:1}
+  .steps-grid{grid-template-columns:1fr 1fr}
+  .testimonials{grid-template-columns:1fr}
+  footer{flex-direction:column;text-align:center}
 }
 </style>
 </head>
 <body>
 
-<!-- ── AUTH ─────────────────────────────────────────────────────── -->
-<div id="auth">
-  <div class="abox">
+<!-- ═══════════════════════════════════════════════════
+  LANDING PAGE
+═══════════════════════════════════════════════════ -->
+<div id="landing">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-brand-i">🌿</div>
+      SafeSpace
+    </div>
+    <div class="nav-links">
+      <button class="nav-login" onclick="openAuth('login')">Sign in</button>
+      <button class="nav-signup" onclick="openAuth('register')">Get started →</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-orb orb1"></div>
+      <div class="hero-orb orb2"></div>
+      <div class="hero-orb orb3"></div>
+      <div class="hero-grid"></div>
+    </div>
+    <div class="hero-badge"><div class="hero-badge-dot"></div>AI-Powered Mental Health Support</div>
+    <h1 class="hero-title">Your mental health,<br><span>always supported.</span></h1>
+    <p class="hero-sub">SafeSpace is your 24/7 AI mental health companion — empathetic, private, and always available. Talk, track your mood, and practice calming exercises anytime.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="openAuth('register')">Start for free →</button>
+      <button class="btn-secondary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">See how it works</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Always available</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Private & secure</div></div>
+      <div class="stat"><div class="stat-num">8+</div><div class="stat-label">Calming exercises</div></div>
+      <div class="stat"><div class="stat-num">Free</div><div class="stat-label">No credit card</div></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" style="max-width:1100px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:.5rem">
+      <div class="section-label">✦ Features</div>
+    </div>
+    <h2 class="section-title" style="text-align:center">Everything you need to feel better</h2>
+    <p class="section-sub" style="text-align:center;margin:0 auto">A complete mental wellness toolkit — from AI conversations to mood tracking and guided exercises.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">💬</div>
+        <div class="feat-title">AI Therapy Chat</div>
+        <div class="feat-desc">Talk to our empathetic AI trained in CBT and mindfulness techniques. Get thoughtful, personalized responses 24/7 — no appointments needed.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Mood Tracker</div>
+        <div class="feat-desc">Log your daily mood and visualize trends over time. Understand your emotional patterns and identify what affects your mental wellbeing.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🧘</div>
+        <div class="feat-title">Anxiety Exercises</div>
+        <div class="feat-desc">8 science-backed exercises including 4-7-8 breathing, box breathing, grounding techniques, and progressive muscle relaxation with animated guides.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📜</div>
+        <div class="feat-title">Chat History</div>
+        <div class="feat-desc">Every conversation is saved securely. Review past sessions, track your progress, and continue conversations where you left off.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔒</div>
+        <div class="feat-title">Private & Secure</div>
+        <div class="feat-desc">Your data is protected with JWT authentication, encrypted connections, and secure cloud storage. What you share stays between you and SafeSpace.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🚨</div>
+        <div class="feat-title">Crisis Detection</div>
+        <div class="feat-desc">Intelligent safety monitoring detects crisis language and immediately provides emergency resources and helpline numbers to keep you safe.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO / APP PREVIEW -->
+  <section class="demo-section" id="demo">
+    <div class="demo-container" style="max-width:1100px;margin:0 auto">
+      <div class="demo-text">
+        <div class="section-label">✦ App Preview</div>
+        <h2 class="section-title">Like having a therapist in your pocket</h2>
+        <p style="font-size:.95rem;color:var(--text2);line-height:1.7;margin-bottom:2rem">SafeSpace responds like a real therapist — empathetic, knowledgeable, and always present. Whether you're anxious, stressed, or just need someone to talk to.</p>
+        <div class="demo-features">
+          <div class="demo-feat">
+            <div class="demo-feat-icon">⚡</div>
+            <div><div class="demo-feat-title">Instant responses</div><div class="demo-feat-desc">No waiting rooms. No scheduling. Get support the moment you need it.</div></div>
+          </div>
+          <div class="demo-feat">
+            <div class="demo-feat-icon">🎯</div>
+            <div><div class="demo-feat-title">Practical tips</div><div class="demo-feat-desc">Every response includes actionable techniques you can use right now.</div></div>
+          </div>
+          <div class="demo-feat">
+            <div class="demo-feat-icon">🌱</div>
+            <div><div class="demo-feat-title">Non-judgmental</div><div class="demo-feat-desc">A safe space to express yourself without fear of judgment or stigma.</div></div>
+          </div>
+        </div>
+        <button class="btn-primary" style="margin-top:2rem" onclick="openAuth('register')">Try it free →</button>
+      </div>
+      <div class="demo-preview">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-chat">
+            <div class="phone-chat-hdr">
+              <div class="phone-chat-dot"></div>
+              <div class="phone-chat-title">SafeSpace AI · Mental Health Companion</div>
+            </div>
+            <div class="phone-msgs" id="demo-msgs">
+              <div class="phone-msg usr">I've been feeling really anxious lately and can't seem to calm down 😔</div>
+              <div class="typing-anim" id="demo-typing"><span></span><span></span><span></span></div>
+            </div>
+            <div class="phone-input">
+              <div class="phone-input-box">Share what's on your mind…</div>
+              <div class="phone-send">➤</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" style="max-width:1100px;margin:0 auto;text-align:center">
+    <div class="section-label">✦ How it works</div>
+    <h2 class="section-title">Get started in 3 simple steps</h2>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-title">Create your free account</div>
+        <div class="step-desc">Sign up in seconds. No credit card required. Just a username and password to get started.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-title">Start your first chat</div>
+        <div class="step-desc">Share how you're feeling. Our AI will listen, understand, and respond with empathy and practical guidance.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-title">Track & improve</div>
+        <div class="step-desc">Log your mood daily, practice calming exercises, and watch your mental wellbeing improve over time.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section" style="max-width:1100px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:.5rem"><div class="section-label">✦ Stories</div></div>
+    <h2 class="section-title" style="text-align:center">Making a real difference</h2>
+    <div class="testimonials">
+      <div class="tcard">
+        <div class="tcard-text">SafeSpace has been a lifesaver during my exams. Whenever anxiety hits at 2am, it's there to help me breathe through it.</div>
+        <div class="tcard-author"><div class="tcard-av">P</div><div><div class="tcard-name">Priya S.</div><div class="tcard-role">Engineering Student</div></div></div>
+      </div>
+      <div class="tcard">
+        <div class="tcard-text">The mood tracker helped me realize my anxiety spikes on Mondays. Such a simple insight but it changed how I prepare for the week.</div>
+        <div class="tcard-author"><div class="tcard-av">R</div><div><div class="tcard-name">Rahul M.</div><div class="tcard-role">Software Developer</div></div></div>
+      </div>
+      <div class="tcard">
+        <div class="tcard-text">I was skeptical at first, but the breathing exercises are genuinely calming. The 4-7-8 technique has become part of my daily routine.</div>
+        <div class="tcard-author"><div class="tcard-av">A</div><div><div class="tcard-name">Ananya K.</div><div class="tcard-role">Teacher</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-bg"></div>
+    <div class="section-label" style="margin:0 auto 1rem">✦ Get started today</div>
+    <h2 class="cta-title">You deserve to feel <span style="background:linear-gradient(135deg,var(--acc3),var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">better.</span></h2>
+    <p class="cta-sub">Join thousands of people using SafeSpace to manage anxiety, track their mood, and build better mental health habits.</p>
+    <button class="btn-primary" style="font-size:1rem;padding:1rem 2.5rem" onclick="openAuth('register')">Create free account →</button>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand"><div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:.65rem">🌿</div>SafeSpace</div>
+    <div class="footer-note">Not a substitute for professional mental health care. If in crisis, call emergency services.</div>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+  AUTH MODAL
+═══════════════════════════════════════════════════ -->
+<div class="auth-modal-overlay" id="auth-overlay">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuth()">✕</button>
     <div class="alogo"><div class="alogo-i">🌿</div><div class="alogo-n">SafeSpace</div></div>
-    <div class="atitle">Welcome back</div>
-    <div class="asub">Your mental health companion</div>
+    <div class="atitle" id="auth-title">Welcome back</div>
+    <div class="asub" id="auth-sub">Sign in to continue your journey</div>
     <div class="atabs">
-      <button class="atab on" onclick="stab('login')">Sign in</button>
-      <button class="atab" onclick="stab('register')">Create account</button>
+      <button class="atab on" id="tab-login" onclick="stab('login')">Sign in</button>
+      <button class="atab" id="tab-reg" onclick="stab('register')">Create account</button>
     </div>
     <div id="aerr" class="aerr"></div>
     <div id="lf">
@@ -372,214 +608,147 @@ html,body{height:100%;height:100dvh;overflow:hidden;font-family:var(--font);back
       <div class="afield"><label>Username</label><input id="ru" type="text" placeholder="Choose a username" autocomplete="username"/></div>
       <div class="afield"><label>Email</label><input id="re" type="email" placeholder="you@example.com" autocomplete="email"/></div>
       <div class="afield"><label>Password</label><input id="rp" type="password" placeholder="Min 6 characters" autocomplete="new-password"/></div>
-      <button class="abtn" id="rbtn" onclick="doReg()">Create account</button>
+      <button class="abtn" id="rbtn" onclick="doReg()">Create account — it's free</button>
     </div>
   </div>
 </div>
 
-<!-- ── APP ──────────────────────────────────────────────────────── -->
-<div id="app">
+<!-- ═══════════════════════════════════════════════════
+  APP
+═══════════════════════════════════════════════════ -->
+<div id="app-screen">
 
-  <!-- ═══ MOBILE TOP BAR ══════════════════════════════════════════ -->
-  <div class="m-topbar">
-    <button class="m-menu-btn" onclick="openDrawer()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  <!-- Mobile top bar -->
+  <div class="m-top">
+    <button class="m-top-menu" onclick="openDr()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="21" height="21"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
     </button>
-    <div class="m-title"><span class="m-title-icon">🌿</span><span id="m-htitle">SafeSpace AI</span></div>
-    <button onclick="newChat()" style="background:none;border:none;cursor:pointer;padding:.2rem;color:#1c1c1e">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22"><path d="M12 5v14M5 12h14"/></svg>
+    <div class="m-top-title" id="m-htitle">🌿 SafeSpace AI</div>
+    <button class="m-top-new" onclick="newChat()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="21" height="21"><path d="M12 5v14M5 12h14"/></svg>
     </button>
   </div>
 
-  <!-- ═══ MOBILE DRAWER ════════════════════════════════════════════ -->
-  <div class="m-drawer-overlay" id="m-dov" onclick="closeDrawer()"></div>
+  <!-- Mobile drawer -->
+  <div class="m-dov" id="m-dov" onclick="closeDr()"></div>
   <div class="m-drawer" id="m-drawer">
-    <div class="m-drawer-top">
-      <div class="m-drawer-brand">
-        <div class="m-drawer-brand-i">🌿</div>
-        <div class="m-drawer-brand-n">SafeSpace</div>
-      </div>
-      <button class="m-drawer-close" onclick="closeDrawer()">✕</button>
+    <div class="m-dr-top">
+      <div class="m-dr-brand"><div class="m-dr-brand-i">🌿</div><div class="m-dr-brand-n">SafeSpace</div></div>
+      <button class="m-dr-close" onclick="closeDr()">✕</button>
     </div>
-    <button class="m-drawer-nchat" onclick="newChat();closeDrawer()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M12 5v14M5 12h14"/></svg>
-      New chat
+    <button class="m-dr-nchat" onclick="newChat();closeDr()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>New chat
     </button>
-    <div class="m-drawer-nav">
-      <button class="m-drawer-ni on" id="m-ni-chat" onclick="goPage('chat');closeDrawer()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat
-      </button>
-      <button class="m-drawer-ni" id="m-ni-history" onclick="goPage('history');closeDrawer()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>History
-      </button>
-      <button class="m-drawer-ni" id="m-ni-mood" onclick="goPage('mood');closeDrawer()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>Mood tracker
-      </button>
-      <button class="m-drawer-ni" id="m-ni-exercises" onclick="goPage('exercises');closeDrawer()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Exercises
-      </button>
+    <div class="m-dr-nav">
+      <button class="m-dr-ni on" id="m-ni-chat" onclick="goPage('chat');closeDr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>
+      <button class="m-dr-ni" id="m-ni-history" onclick="goPage('history');closeDr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>History</button>
+      <button class="m-dr-ni" id="m-ni-mood" onclick="goPage('mood');closeDr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>Mood tracker</button>
+      <button class="m-dr-ni" id="m-ni-exercises" onclick="goPage('exercises');closeDr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Exercises</button>
     </div>
-    <div class="m-drawer-sess-label">Recent chats</div>
-    <div class="m-drawer-sess" id="m-slist"><div class="m-empty" style="padding:.75rem;font-size:.78rem">No chats yet</div></div>
-    <div class="m-drawer-foot">
+    <div class="m-dr-sess-lbl">Recent chats</div>
+    <div class="m-dr-sess" id="m-slist"><div class="empty-s" style="padding:.75rem;font-size:.77rem">No chats yet</div></div>
+    <div class="m-dr-foot">
       <div class="m-urow" onclick="doLogout()">
         <div class="m-uav" id="m-uav">?</div>
         <div class="m-unm" id="m-unm">User</div>
-        <button class="m-lout" title="Sign out">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-        </button>
+        <button class="m-lout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
       </div>
     </div>
   </div>
 
-  <!-- ═══ MOBILE CONTENT ══════════════════════════════════════════ -->
-  <div class="m-content" id="m-content">
-    <!-- Mobile chat page -->
-    <div class="pg on" id="m-pg-chat" style="background:#fff">
-      <div class="m-msgs" id="m-msgs">
-        <div class="m-welcome" id="m-welc">
-          <div style="width:52px;height:52px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem">🌿</div>
-          <div class="m-w-title">How can I help you?</div>
-          <div style="font-size:.88rem;color:#8e8e93;line-height:1.65;max-width:270px;text-align:center;margin-top:.4rem">I'm your SafeSpace AI — here to listen, support, and help you feel better.</div>
-        </div>
-      </div>
-      <div class="m-ebar" id="m-ebar">🚨 Emergency detected. Please call iCall: 9152987821 immediately.</div>
-      <div class="m-vbar" id="m-vbar">
-        <span>Viewing past conversation</span>
-        <button class="m-vbar-btn" onclick="newChat()">New chat</button>
-      </div>
-      <div class="m-iarea" id="m-iarea">
-        <div class="m-ibox">
-          <textarea class="m-cinput" id="m-ci" placeholder="Ask anything" rows="1" onkeydown="mKey(event)" oninput="mRsz(this)"></textarea>
-          <button class="m-sbtn" id="m-sbtn" onclick="mSend()">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          </button>
-        </div>
-        <div class="m-ifooter">SafeSpace AI can make mistakes. Not a substitute for professional care.</div>
-      </div>
-    </div>
-    <!-- Mobile history -->
-    <div class="pg" id="m-pg-history" style="background:#fff">
-      <div class="m-spg"><div class="m-spin">
-        <div class="m-ptitle">Chat history</div>
-        <div id="m-hlist"><div class="m-empty"><div class="m-empty-i">💬</div>No history yet.</div></div>
-      </div></div>
-    </div>
-    <!-- Mobile mood -->
-    <div class="pg" id="m-pg-mood" style="background:#fff">
-      <div class="m-spg"><div class="m-spin">
-        <div class="m-ptitle">Mood tracker</div>
-        <div class="m-slbl">How are you feeling?</div>
-        <div class="m-mgrid">
-          <button class="m-mbtn" onclick="pm(this,'😄 Great',5,'m')"><span class="m-moji">😄</span><span class="m-mlbl">Great</span></button>
-          <button class="m-mbtn" onclick="pm(this,'🙂 Good',4,'m')"><span class="m-moji">🙂</span><span class="m-mlbl">Good</span></button>
-          <button class="m-mbtn" onclick="pm(this,'😐 Neutral',3,'m')"><span class="m-moji">😐</span><span class="m-mlbl">Neutral</span></button>
-          <button class="m-mbtn" onclick="pm(this,'😔 Low',2,'m')"><span class="m-moji">😔</span><span class="m-mlbl">Low</span></button>
-          <button class="m-mbtn" onclick="pm(this,'😢 Very low',1,'m')"><span class="m-moji">😢</span><span class="m-mlbl">Very low</span></button>
-        </div>
-        <textarea class="m-mnote" id="m-mnote" placeholder="Add a note (optional)"></textarea>
-        <button class="m-savebtn" id="m-msavebtn" onclick="saveMood('m')">Save mood</button>
-        <div class="m-slbl">Mood history</div>
-        <div class="m-ccard" id="m-ccard" style="display:none"><canvas id="m-mc" height="70"></canvas></div>
-        <div id="m-mlogs"><div class="m-empty"><div class="m-empty-i">😊</div>No mood logs yet.</div></div>
-      </div></div>
-    </div>
-    <!-- Mobile exercises -->
-    <div class="pg" id="m-pg-exercises" style="background:#fff">
-      <div class="m-spg"><div class="m-spin">
-        <div class="m-ptitle">Anxiety relief exercises</div>
-        <div class="m-egrid" id="m-egrid"></div>
-      </div></div>
-    </div>
-  </div>
-
-  <!-- ═══ DESKTOP LAYOUT ══════════════════════════════════════════ -->
+  <!-- Desktop layout -->
   <div class="d-layout">
-    <!-- Sidebar -->
-    <div class="sb">
-      <div class="sb-top">
-        <div class="sb-brand"><div class="sb-brand-i">🌿</div><div class="sb-brand-n">SafeSpace</div></div>
-        <button class="ncbtn" onclick="newChat()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>New chat
-        </button>
+    <div class="d-sb">
+      <div class="d-sb-top">
+        <div class="d-brand"><div class="d-brand-i">🌿</div><div class="d-brand-n">SafeSpace</div></div>
+        <button class="d-nchat" onclick="newChat()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
       </div>
-      <div class="sb-nav">
-        <div class="slbl">Navigation</div>
-        <button class="ni on" id="ni-chat" onclick="goPage('chat')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>
-        <button class="ni" id="ni-history" onclick="goPage('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>History</button>
-        <button class="ni" id="ni-mood" onclick="goPage('mood')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>Mood tracker</button>
-        <button class="ni" id="ni-exercises" onclick="goPage('exercises')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Exercises</button>
+      <div class="d-sb-nav">
+        <div class="d-slbl">Navigation</div>
+        <button class="d-ni on" id="ni-chat" onclick="goPage('chat')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>
+        <button class="d-ni" id="ni-history" onclick="goPage('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>History</button>
+        <button class="d-ni" id="ni-mood" onclick="goPage('mood')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>Mood tracker</button>
+        <button class="d-ni" id="ni-exercises" onclick="goPage('exercises')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Exercises</button>
       </div>
-      <div class="sb-sess">
-        <div class="slbl2">Recent chats</div>
-        <div id="slist"><div class="empty" style="padding:.7rem;font-size:.76rem">No chats yet</div></div>
+      <div class="d-sb-sess">
+        <div class="d-slbl2">Recent chats</div>
+        <div id="slist"><div class="empty-s" style="padding:.7rem;font-size:.75rem">No chats yet</div></div>
       </div>
-      <div class="sb-foot">
-        <div class="urow" onclick="doLogout()">
-          <div class="uav" id="uav">?</div>
-          <div class="unm" id="unm">User</div>
-          <button class="lout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+      <div class="d-sb-foot">
+        <div class="d-urow" onclick="doLogout()">
+          <div class="d-uav" id="uav">?</div>
+          <div class="d-unm" id="unm">User</div>
+          <button class="d-lout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
         </div>
       </div>
     </div>
 
-    <!-- Desktop Main -->
     <div class="d-main">
-      <div class="hdr">
-        <div class="hdr-dot"></div>
-        <div class="hdr-title" id="htitle">SafeSpace AI · Mental Health Companion</div>
-        <div class="hdr-right" id="hright"></div>
+      <div class="d-hdr">
+        <div class="d-hdr-dot"></div>
+        <div class="d-hdr-title" id="htitle">SafeSpace AI · Mental Health Companion</div>
+        <div class="d-hdr-right" id="hright"></div>
       </div>
-      <!-- Desktop Chat -->
+
+      <!-- Chat -->
       <div class="pg on" id="pg-chat">
-        <div class="msgs" id="msgs">
-          <div class="welcome" id="welc">
-            <div class="w-icon">🌿</div>
-            <div class="w-title">How can I help you?</div>
-            <div class="w-sub">I'm your SafeSpace AI — here to listen, support, and help you feel better.</div>
+        <div class="msgs-area" id="msgs">
+          <div class="welcome-screen" id="welc">
+            <div class="ws-icon">🌿</div>
+            <div class="ws-title">How can I help you?</div>
+            <div class="ws-sub">I'm your SafeSpace AI — here to listen, support, and help you feel better. Share what's on your mind.</div>
+            <div class="ws-prompts">
+              <span class="ws-prompt" onclick="quickSend(this)">I feel anxious today</span>
+              <span class="ws-prompt" onclick="quickSend(this)">I can't sleep at night</span>
+              <span class="ws-prompt" onclick="quickSend(this)">I'm feeling overwhelmed</span>
+              <span class="ws-prompt" onclick="quickSend(this)">Suggest some exercises</span>
+            </div>
           </div>
         </div>
-        <div class="ebar" id="ebar">🚨 Emergency alert. Please call iCall: 9152987821 immediately.</div>
+        <div class="ebar" id="ebar">🚨 Emergency alert. Please call iCall: 9152987821 or emergency services immediately.</div>
         <div class="vbar" id="vbar"><span>Viewing past conversation</span><button class="vbar-btn" onclick="newChat()">New chat</button></div>
         <div class="iarea" id="iarea">
           <div class="ibox">
-            <textarea class="cinput" id="ci" placeholder="Message SafeSpace..." rows="1" onkeydown="onKey(event)" oninput="rsz(this)"></textarea>
+            <textarea class="ci" id="ci" placeholder="Message SafeSpace..." rows="1" onkeydown="onKey(event)" oninput="rsz(this)"></textarea>
             <button class="sbtn" id="sbtn" onclick="send()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
           </div>
-          <div class="ifooter">SafeSpace AI can make mistakes. Not a substitute for professional care.</div>
+          <div class="ifooter">SafeSpace AI can make mistakes. Not a substitute for professional mental health care.</div>
         </div>
       </div>
-      <!-- Desktop History -->
+
+      <!-- History -->
       <div class="pg" id="pg-history">
         <div class="spg"><div class="spin">
           <div class="ptitle">Chat history</div>
-          <div id="hlist"><div class="empty"><div class="empty-i">💬</div>No history yet.</div></div>
+          <div id="hlist"><div class="empty-s"><div class="empty-i">💬</div>No history yet. Start a conversation!</div></div>
         </div></div>
       </div>
-      <!-- Desktop Mood -->
+
+      <!-- Mood -->
       <div class="pg" id="pg-mood">
         <div class="spg"><div class="spin">
           <div class="ptitle">Mood tracker</div>
-          <div class="slbl3">How are you feeling?</div>
-          <div class="mgrid">
-            <button class="mbtn" onclick="pm(this,'😄 Great',5,'d')"><span class="moji">😄</span><span class="mlbl">Great</span></button>
-            <button class="mbtn" onclick="pm(this,'🙂 Good',4,'d')"><span class="moji">🙂</span><span class="mlbl">Good</span></button>
-            <button class="mbtn" onclick="pm(this,'😐 Neutral',3,'d')"><span class="moji">😐</span><span class="mlbl">Neutral</span></button>
-            <button class="mbtn" onclick="pm(this,'😔 Low',2,'d')"><span class="moji">😔</span><span class="mlbl">Low</span></button>
-            <button class="mbtn" onclick="pm(this,'😢 Very low',1,'d')"><span class="moji">😢</span><span class="mlbl">Very low</span></button>
+          <div class="m-slbl">How are you feeling today?</div>
+          <div class="mood-grid">
+            <button class="m-btn" onclick="pm(this,'😄 Great',5)"><span class="m-emoji">😄</span><span class="m-lbl">Great</span></button>
+            <button class="m-btn" onclick="pm(this,'🙂 Good',4)"><span class="m-emoji">🙂</span><span class="m-lbl">Good</span></button>
+            <button class="m-btn" onclick="pm(this,'😐 Neutral',3)"><span class="m-emoji">😐</span><span class="m-lbl">Neutral</span></button>
+            <button class="m-btn" onclick="pm(this,'😔 Low',2)"><span class="m-emoji">😔</span><span class="m-lbl">Low</span></button>
+            <button class="m-btn" onclick="pm(this,'😢 Very low',1)"><span class="m-emoji">😢</span><span class="m-lbl">Very low</span></button>
           </div>
-          <textarea class="mnote" id="mnote" placeholder="Add a note (optional)"></textarea>
-          <button class="savebtn" id="msavebtn" onclick="saveMood('d')">Save mood</button>
-          <div class="slbl3">Mood history</div>
-          <div class="ccard" id="ccard" style="display:none"><canvas id="mc" height="70"></canvas></div>
-          <div id="mlogs"><div class="empty"><div class="empty-i">😊</div>No mood logs yet.</div></div>
+          <textarea class="m-note" id="mnote" placeholder="Add a note — what's making you feel this way? (optional)"></textarea>
+          <button class="m-savebtn" id="msavebtn" onclick="saveMood()">Save mood</button>
+          <div class="m-slbl">Mood history</div>
+          <div class="m-ccard" id="ccard" style="display:none"><canvas id="mc" height="70"></canvas></div>
+          <div id="mlogs"><div class="empty-s"><div class="empty-i">😊</div>No mood logs yet.</div></div>
         </div></div>
       </div>
-      <!-- Desktop Exercises -->
+
+      <!-- Exercises -->
       <div class="pg" id="pg-exercises">
         <div class="spg"><div class="spin">
           <div class="ptitle">Anxiety relief exercises</div>
-          <div class="egrid" id="egrid"></div>
+          <div class="ex-grid" id="egrid"></div>
         </div></div>
       </div>
     </div>
@@ -587,29 +756,67 @@ html,body{height:100%;height:100dvh;overflow:hidden;font-family:var(--font);back
 </div>
 
 <!-- Modal -->
-<div class="ov" id="ov" onclick="clov(event)"><div class="modal"><button class="mcls" onclick="clmod()">✕</button><div id="mbody"></div></div></div>
+<div class="ov" id="ov" onclick="clov(event)">
+  <svg width="0" height="0"><defs><linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs></svg>
+  <div class="modal"><button class="mcls" onclick="clmod()">✕</button><div id="mbody"></div></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
 const API='https://mental-health-bot-d56n.onrender.com';
 let token=localStorage.getItem('ss_token'),me=JSON.parse(localStorage.getItem('ss_user')||'null');
-let sid=null,viewing=false,selM=null,selS=0,dChart=null,mMChart=null,bInt=null,tInt=null;
-const isMob=()=>window.innerWidth<=768;
+let sid=null,viewing=false,selM=null,selS=0,mChart=null,bInt=null,tInt=null;
 
 window.onerror=(m,s,l)=>{console.error(m,s,l);return true};
 window.addEventListener('unhandledrejection',e=>{console.error(e.reason);e.preventDefault()});
+
+// Demo animation
+const demoResponses=[
+  "I hear you — anxiety can feel so overwhelming, especially when it seems to come out of nowhere. 💙 What you're experiencing is your nervous system going into overdrive, which is completely normal. Try this right now: inhale for 4 counts, hold for 7, exhale for 8. Do it 3 times. What do you think has been triggering this lately?",
+];
+let demoStarted=false;
+function startDemo(){
+  if(demoStarted)return;demoStarted=true;
+  setTimeout(()=>{
+    const td=document.getElementById('demo-typing');
+    const dm=document.getElementById('demo-msgs');
+    if(!td||!dm)return;
+    setTimeout(()=>{
+      td.remove();
+      const msg=document.createElement('div');
+      msg.className='phone-msg ai';
+      msg.textContent=demoResponses[0];
+      dm.appendChild(msg);
+    },2000);
+  },1000);
+}
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)startDemo()})},{threshold:.3});
+const demoEl=document.getElementById('demo');if(demoEl)obs.observe(demoEl);
+
+// Scroll animations
+const animObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)'}})},{threshold:.1});
+document.querySelectorAll('.feat-card,.step-card,.tcard').forEach(el=>{el.style.opacity='0';el.style.transform='translateY(20px)';el.style.transition='opacity .5s ease, transform .5s ease';animObs.observe(el)});
 
 document.addEventListener('DOMContentLoaded',()=>{
   renderEx();
   if(token&&me){showApp();init()}
 });
 
-// AUTH
+// AUTH MODAL
+function openAuth(tab){
+  document.getElementById('auth-overlay').classList.add('on');
+  stab(tab);
+}
+function closeAuth(){document.getElementById('auth-overlay').classList.remove('on')}
+document.getElementById('auth-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('auth-overlay'))closeAuth()});
+
 function stab(t){
   document.querySelectorAll('.atab').forEach((b,i)=>b.classList.toggle('on',(i===0&&t==='login')||(i===1&&t==='register')));
   document.getElementById('lf').style.display=t==='login'?'':'none';
   document.getElementById('rf').style.display=t==='register'?'':'none';
   document.getElementById('aerr').style.display='none';
+  document.getElementById('auth-title').textContent=t==='login'?'Welcome back':'Create account';
+  document.getElementById('auth-sub').textContent=t==='login'?'Sign in to continue your journey':'Start your mental wellness journey';
 }
 function serr(m){const e=document.getElementById('aerr');e.textContent=m;e.style.display='block'}
 
@@ -620,7 +827,7 @@ async function doLogin(){
   try{
     const r=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
     const d=await r.json();if(!r.ok){serr(d.detail||'Login failed.');return}
-    sv(d.token,d.user);showApp();init();
+    sv(d.token,d.user);closeAuth();showApp();init();
   }catch{serr('Cannot connect. Please try again.')}
   finally{b.disabled=false;b.textContent='Sign in'}
 }
@@ -628,21 +835,21 @@ async function doReg(){
   const u=document.getElementById('ru').value.trim(),e=document.getElementById('re').value.trim(),p=document.getElementById('rp').value;
   if(!u||!e||!p){serr('Please fill in all fields.');return}
   if(p.length<6){serr('Password must be at least 6 characters.');return}
-  const b=document.getElementById('rbtn');b.disabled=true;b.textContent='Creating…';
+  const b=document.getElementById('rbtn');b.disabled=true;b.textContent='Creating account…';
   try{
     const r=await fetch(`${API}/auth/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,email:e,password:p})});
     const d=await r.json();if(!r.ok){serr(d.detail||'Registration failed.');return}
-    sv(d.token,d.user);showApp();init();
+    sv(d.token,d.user);closeAuth();showApp();init();
   }catch{serr('Cannot connect. Please try again.')}
-  finally{b.disabled=false;b.textContent='Create account'}
+  finally{b.disabled=false;b.textContent='Create account — it\'s free'}
 }
 function sv(t,u){token=t;me=u;localStorage.setItem('ss_token',t);localStorage.setItem('ss_user',JSON.stringify(u))}
-function doLogout(){localStorage.clear();token=null;me=null;sid=null;document.getElementById('app').classList.remove('on');document.getElementById('auth').style.display='flex';resetChat()}
+function doLogout(){localStorage.clear();token=null;me=null;sid=null;document.getElementById('app-screen').classList.remove('on');document.getElementById('landing').classList.remove('hide');resetChat()}
 
 // APP
 function showApp(){
-  document.getElementById('auth').style.display='none';
-  document.getElementById('app').classList.add('on');
+  document.getElementById('landing').classList.add('hide');
+  document.getElementById('app-screen').classList.add('on');
   const n=me?.username||'User';
   ['uav','m-uav'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n[0].toUpperCase()});
   ['unm','m-unm'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n});
@@ -651,27 +858,19 @@ function showApp(){
 async function init(){await loadSess();newChat()}
 
 // DRAWER
-function openDrawer(){document.getElementById('m-drawer').classList.add('open');document.getElementById('m-dov').classList.add('on')}
-function closeDrawer(){document.getElementById('m-drawer').classList.remove('open');document.getElementById('m-dov').classList.remove('on')}
+function openDr(){document.getElementById('m-drawer').classList.add('open');document.getElementById('m-dov').classList.add('on')}
+function closeDr(){document.getElementById('m-drawer').classList.remove('open');document.getElementById('m-dov').classList.remove('on')}
 
 // NAVIGATION
-const TITLES={chat:'SafeSpace AI',history:'Chat history',mood:'Mood tracker',exercises:'Exercises'};
+const TITLES={chat:'SafeSpace AI · Mental Health Companion',history:'Chat history',mood:'Mood tracker',exercises:'Anxiety relief exercises'};
 function goPage(p){
-  const mob=isMob();
-  // Desktop pages
-  if(!mob){
-    document.querySelectorAll('.d-main .pg').forEach(x=>x.classList.remove('on'));
-    document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
-    const pg=document.getElementById(`pg-${p}`);if(pg)pg.classList.add('on');
-    const ni=document.getElementById(`ni-${p}`);if(ni)ni.classList.add('on');
-    const ht=document.getElementById('htitle');if(ht)ht.textContent=TITLES[p]||'SafeSpace';
-  }
-  // Mobile pages
-  document.querySelectorAll('.m-content .pg').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.m-drawer-ni').forEach(x=>x.classList.remove('on'));
-  const mpg=document.getElementById(`m-pg-${p}`);if(mpg)mpg.classList.add('on');
-  const mni=document.getElementById(`m-ni-${p}`);if(mni)mni.classList.add('on');
-  const mt=document.getElementById('m-htitle');if(mt)mt.textContent=TITLES[p]||'SafeSpace AI';
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.d-ni,.m-dr-ni').forEach(x=>x.classList.remove('on'));
+  const pg=document.getElementById(`pg-${p}`);if(pg)pg.classList.add('on');
+  document.getElementById(`ni-${p}`)?.classList.add('on');
+  document.getElementById(`m-ni-${p}`)?.classList.add('on');
+  const ht=document.getElementById('htitle');if(ht)ht.textContent=TITLES[p]||'SafeSpace';
+  const mt=document.getElementById('m-htitle');if(mt)mt.textContent='🌿 '+(TITLES[p]||'SafeSpace');
   if(p==='history')loadHist();
   if(p==='mood')loadMoodH();
 }
@@ -684,61 +883,52 @@ async function loadSess(){
   }catch{}
 }
 function renderSess(list,aid){
-  const html=!list.length?'<div class="empty" style="padding:.7rem;font-size:.76rem">No chats yet</div>':list.map(s=>`<div class="sitem ${s.id===aid?'on':''}" onclick="loadSess2('${s.id}','${esc(s.title)}')"><div class="stitle">${esc(s.title)}</div><div class="smeta">${ago(s.last_message||s.created_at)}</div></div>`).join('');
-  const mhtml=!list.length?'<div class="m-empty" style="padding:.7rem;font-size:.78rem">No chats yet</div>':list.map(s=>`<div class="m-sitem ${s.id===aid?'on':''}" onclick="loadSess2('${s.id}','${esc(s.title)}');closeDrawer()"><div class="m-stitle">${esc(s.title)}</div><div class="m-smeta">${ago(s.last_message||s.created_at)}</div></div>`).join('');
-  const sl=document.getElementById('slist');if(sl)sl.innerHTML=html;
-  const ml=document.getElementById('m-slist');if(ml)ml.innerHTML=mhtml;
+  const mk=(cls,si,sm)=>!list.length?`<div class="empty-s" style="padding:.7rem;font-size:.76rem">No chats yet</div>`:list.map(s=>`<div class="${cls} ${s.id===aid?'on':''}" onclick="loadSess2('${s.id}','${esc(s.title)}')">${si?`<div class="${si}">${esc(s.title)}</div>`:''}<div class="${sm}">${ago(s.last_message||s.created_at)}</div></div>`).join('');
+  const sl=document.getElementById('slist');if(sl)sl.innerHTML=mk('d-si','d-si-t','d-si-m');
+  const ml=document.getElementById('m-slist');if(ml)ml.innerHTML=mk('m-si','m-si-t','m-si-m').replace(/onclick="loadSess2/g,'onclick="closeDr();loadSess2');
 }
-function ago(ts){
-  if(!ts)return'Now';const d=Date.now()-new Date(ts).getTime(),m=Math.floor(d/60000);
-  if(m<1)return'Just now';if(m<60)return`${m}m ago`;
-  const h=Math.floor(m/60);if(h<24)return`${h}h ago`;
-  return new Date(ts).toLocaleDateString('en',{month:'short',day:'numeric'});
-}
+function ago(ts){if(!ts)return'Now';const d=Date.now()-new Date(ts).getTime(),m=Math.floor(d/60000);if(m<1)return'Just now';if(m<60)return`${m}m ago`;const h=Math.floor(m/60);if(h<24)return`${h}h ago`;return new Date(ts).toLocaleDateString('en',{month:'short',day:'numeric'})}
 async function getSess(){try{const r=await fetch(`${API}/sessions`,{headers:{Authorization:`Bearer ${token}`}});return(await r.json()).sessions||[]}catch{return[]}}
 
 function newChat(){
   sid=null;viewing=false;
-  // Reset both desktop and mobile chat
-  ['msgs','m-msgs'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
-    const isMobile=id==='m-msgs';
-    el.innerHTML=isMobile?`<div class="m-welcome" id="${id==='m-msgs'?'m-welc':'welc'}"><div style="width:50px;height:50px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.35rem;margin-bottom:.9rem">🌿</div><div class="m-w-title">How can I help you?</div><div style="font-size:.87rem;color:#8e8e93;line-height:1.65;max-width:270px;text-align:center;margin-top:.35rem">I'm your SafeSpace AI — here to listen and support you.</div></div>`:`<div class="welcome" id="welc"><div class="w-icon">🌿</div><div class="w-title">How can I help you?</div><div class="w-sub">I'm your SafeSpace AI — here to listen, support, and help you feel better.</div></div>`;
-  });
-  setIn(true);
-  goPage('chat');
-  document.querySelectorAll('.sitem,.m-sitem').forEach(e=>e.classList.remove('on'));
+  const el=document.getElementById('msgs');
+  if(el)el.innerHTML=`<div class="welcome-screen" id="welc"><div class="ws-icon">🌿</div><div class="ws-title">How can I help you?</div><div class="ws-sub">I'm your SafeSpace AI — here to listen, support, and help you feel better.</div><div class="ws-prompts"><span class="ws-prompt" onclick="quickSend(this)">I feel anxious today</span><span class="ws-prompt" onclick="quickSend(this)">I can't sleep at night</span><span class="ws-prompt" onclick="quickSend(this)">I'm feeling overwhelmed</span><span class="ws-prompt" onclick="quickSend(this)">Suggest some exercises</span></div></div>`;
+  setIn(true);goPage('chat');
+  document.querySelectorAll('.d-si,.m-si').forEach(e=>e.classList.remove('on'));
 }
-
 function setIn(show){
-  ['iarea','m-iarea'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=show?'':'none'});
-  ['vbar','m-vbar'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=show?'none':'flex'});
+  const ia=document.getElementById('iarea');if(ia)ia.style.display=show?'':'none';
+  const vb=document.getElementById('vbar');if(vb)vb.style.display=show?'none':'flex';
   viewing=!show;
 }
-
 async function loadSess2(id,title){
   sid=id;viewing=true;goPage('chat');setIn(false);
   const ht=document.getElementById('htitle');if(ht)ht.textContent=title||'Past chat';
-  const mt=document.getElementById('m-htitle');if(mt)mt.textContent=title||'Past chat';
+  const mt=document.getElementById('m-htitle');if(mt)mt.textContent='🌿 '+(title||'Past chat');
   try{
     const r=await fetch(`${API}/sessions/${id}/messages`,{headers:{Authorization:`Bearer ${token}`}});
     if(!r.ok)return;const d=await r.json();
-    ['msgs','m-msgs'].forEach(eid=>{const el=document.getElementById(eid);if(!el)return;el.innerHTML='';if(!d.messages?.length){el.innerHTML=`<div class="${eid==='m-msgs'?'m-empty':'empty'}">Empty conversation</div>`;return}d.messages.forEach(m=>addMsg(m.role,m.message,m.timestamp,m.tool_called,true));el.scrollTop=el.scrollHeight;});
+    const el=document.getElementById('msgs');if(!el)return;
+    el.innerHTML='';
+    if(!d.messages?.length){el.innerHTML='<div class="empty-s">Empty conversation</div>';return}
+    d.messages.forEach(m=>addMsg(m.role,m.message,m.timestamp,m.tool_called,true));
+    el.scrollTop=el.scrollHeight;
     getSess().then(s=>renderSess(s,id));
   }catch{}
 }
 
 // CHAT
 function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
-function mKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();mSend()}}
 function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,180)+'px'}
-function mRsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px'}
+function quickSend(el){const msg=el.textContent;const ci=document.getElementById('ci');if(ci){ci.value=msg;send()}}
 
-async function sendMsg(msg){
+async function send(){
   if(viewing)return;
-  ['msgs','m-msgs'].forEach(id=>{const w=document.getElementById(id==='msgs'?'welc':'m-welc');if(w)w.remove()});
+  const inp=document.getElementById('ci');const msg=inp.value.trim();if(!msg)return;
+  const w=document.getElementById('welc');if(w)w.remove();
+  inp.value='';inp.style.height='auto';
   document.getElementById('sbtn').disabled=true;
-  document.getElementById('m-sbtn').disabled=true;
   addMsg('user',msg);
   const tEl=addTyping();
   try{
@@ -749,43 +939,28 @@ async function sendMsg(msg){
     const d=await r.json();
     if(!sid&&d.session_id)sid=d.session_id;
     addMsg('ai',d.response,null,d.tool_called);
-    if(d.tool_called==='emergency_call_tool'){
-      ['ebar','m-ebar'].forEach(id=>{const e=document.getElementById(id);if(e){e.style.display='block';setTimeout(()=>e.style.display='none',10000)}});
-    }
+    if(d.tool_called==='emergency_call_tool'){const eb=document.getElementById('ebar');if(eb){eb.style.display='block';setTimeout(()=>eb.style.display='none',10000)}}
     getSess().then(s=>renderSess(s,sid));
-  }catch{tEl.remove();addMsg('ai','I\'m having a brief issue. Please try again in a moment. 💙')}
-  finally{document.getElementById('sbtn').disabled=false;document.getElementById('m-sbtn').disabled=false}
+  }catch{tEl.remove();addMsg('ai','I\'m having a brief technical issue. Try again in a moment. 💙')}
+  finally{document.getElementById('sbtn').disabled=false;document.getElementById('ci').focus()}
 }
-function send(){const inp=document.getElementById('ci');const msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';sendMsg(msg)}
-function mSend(){const inp=document.getElementById('m-ci');const msg=inp.value.trim();if(!msg)return;inp.value='';inp.style.height='auto';sendMsg(msg)}
-
 function addMsg(role,text,ts,tool,noA=false){
-  const t=ts?new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const el=document.getElementById('msgs');if(!el)return;
   const isu=role==='user';
+  const t=ts?new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   const nm=isu?(me?.username||'You'):'SafeSpace AI';
   let th='';
-  if(tool&&tool!=='None'){const em=tool.includes('emergency');th=`<span style="display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;padding:.12rem .5rem;border-radius:20px;margin-top:.25rem;background:${em?'rgba(239,68,68,.1)':'rgba(16,163,127,.1)'};color:${em?'#fca5a5':'#34d399'}">${em?'🚨':'🔧'} ${tool.replace(/_/g,' ')}</span>`}
-  // Desktop
-  const dEl=document.getElementById('msgs');
-  if(dEl){
-    const w=document.createElement('div');w.className='mwrap';
-    w.innerHTML=`<div class="mrow ${isu?'usr':'ai'}"><div class="mav ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="mcont"><div class="mname">${nm}</div><div class="mbub">${esc(text)}</div>${th}<div class="mtime">${t}</div></div></div>`;
-    dEl.appendChild(w);dEl.scrollTop=dEl.scrollHeight;
-  }
-  // Mobile
-  const mEl=document.getElementById('m-msgs');
-  if(mEl){
-    const w=document.createElement('div');w.className='m-mwrap';
-    w.innerHTML=`<div class="m-mrow ${isu?'usr':'ai'}"><div class="m-mav ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="m-mcont"><div class="m-mname">${nm}</div><div class="m-mbub">${esc(text)}</div>${th}<div class="m-mtime">${t}</div></div></div>`;
-    mEl.appendChild(w);mEl.scrollTop=mEl.scrollHeight;
-  }
+  if(tool&&tool!=='None'){const em=tool.includes('emergency');th=`<span style="display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;padding:.12rem .5rem;border-radius:20px;margin-top:.25rem;background:${em?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)'};color:${em?'#fca5a5':'#34d399'}">${em?'🚨':'🔧'} ${tool.replace(/_/g,' ')}</span>`}
+  const w=document.createElement('div');w.className='msg-wrap';
+  w.innerHTML=`<div class="msg-row ${isu?'usr':'ai'}"><div class="msg-av ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="msg-body"><div class="msg-name">${nm}</div><div class="msg-bub">${esc(text)}</div>${th}<div class="msg-time">${t}</div></div></div>`;
+  el.appendChild(w);el.scrollTop=el.scrollHeight;
 }
 function addTyping(){
-  const dEl=document.getElementById('msgs');let dw=null;
-  if(dEl){dw=document.createElement('div');dw.className='trow';dw.innerHTML=`<div class="mav ai">🌿</div><div class="tdots"><span></span><span></span><span></span></div>`;dEl.appendChild(dw);dEl.scrollTop=dEl.scrollHeight;}
-  const mEl=document.getElementById('m-msgs');let mw=null;
-  if(mEl){mw=document.createElement('div');mw.className='m-trow';mw.innerHTML=`<div class="m-mav ai">🌿</div><div class="m-tdots"><span></span><span></span><span></span></div>`;mEl.appendChild(mw);mEl.scrollTop=mEl.scrollHeight;}
-  return{remove:()=>{dw?.remove();mw?.remove()}};
+  const el=document.getElementById('msgs');if(!el)return{remove:()=>{}};
+  const w=document.createElement('div');w.className='t-row';
+  w.innerHTML=`<div class="msg-av ai">🌿</div><div class="t-dots"><span></span><span></span><span></span></div>`;
+  el.appendChild(w);el.scrollTop=el.scrollHeight;
+  return{remove:()=>w.remove()};
 }
 
 // HISTORY
@@ -793,28 +968,21 @@ async function loadHist(){
   try{
     const r=await fetch(`${API}/history`,{headers:{Authorization:`Bearer ${token}`}});if(!r.ok)return;
     const d=await r.json();
-    const dHtml=d.history?.length?d.history.map(m=>{const isu=m.role==='user';const ts=m.timestamp?new Date(m.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';return`<div class="hitem"><div class="hav ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="hbody"><div class="hrole">${isu?me?.username||'You':'SafeSpace AI'}</div><div class="htxt">${esc(m.message)}</div><div class="htime">${ts}</div></div></div>`}).join(''):'<div class="empty"><div class="empty-i">💬</div>No history yet.</div>';
-    const mHtml=d.history?.length?d.history.map(m=>{const isu=m.role==='user';const ts=m.timestamp?new Date(m.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';return`<div class="m-hitem"><div class="m-hav ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="m-hbody"><div class="m-hrole">${isu?me?.username||'You':'SafeSpace AI'}</div><div class="m-htxt">${esc(m.message)}</div><div class="m-htime">${ts}</div></div></div>`}).join(''):'<div class="m-empty"><div class="m-empty-i">💬</div>No history yet.</div>';
-    const hl=document.getElementById('hlist');if(hl)hl.innerHTML=dHtml;
-    const mhl=document.getElementById('m-hlist');if(mhl)mhl.innerHTML=mHtml;
+    const hl=document.getElementById('hlist');if(!hl)return;
+    if(!d.history?.length){hl.innerHTML='<div class="empty-s"><div class="empty-i">💬</div>No history yet.</div>';return}
+    hl.innerHTML=d.history.map(m=>{const isu=m.role==='user';const ts=m.timestamp?new Date(m.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';return`<div class="h-item"><div class="h-av ${isu?'usr':'ai'}">${isu?(me?.username?.[0]?.toUpperCase()||'U'):'🌿'}</div><div class="h-body"><div class="h-role">${isu?me?.username||'You':'SafeSpace AI'}</div><div class="h-txt">${esc(m.message)}</div><div class="h-time">${ts}</div></div></div>`}).join('');
   }catch{}
 }
 
 // MOOD
-function pm(btn,mood,score,mode){
-  const sel=mode==='m'?'.m-mbtn':'.mbtn';
-  document.querySelectorAll(sel).forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');selM=mood;selS=score;
-}
-async function saveMood(mode){
+function pm(btn,mood,score){document.querySelectorAll('.m-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selM=mood;selS=score}
+async function saveMood(){
   if(!selM){showT('Please select a mood first');return}
-  const noteId=mode==='m'?'m-mnote':'mnote';
-  const btnId=mode==='m'?'m-msavebtn':'msavebtn';
-  const note=document.getElementById(noteId).value.trim();
-  const b=document.getElementById(btnId);b.disabled=true;b.textContent='Saving…';
+  const note=document.getElementById('mnote').value.trim();
+  const b=document.getElementById('msavebtn');b.disabled=true;b.textContent='Saving…';
   try{
     const r=await fetch(`${API}/mood/log`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({mood:selM,score:selS,note})});
-    if(r.ok){showT('Mood saved! ✅');document.getElementById(noteId).value='';document.querySelectorAll('.mbtn,.m-mbtn').forEach(b=>b.classList.remove('sel'));selM=null;selS=0;loadMoodH()}
+    if(r.ok){showT('Mood saved! ✅');document.getElementById('mnote').value='';document.querySelectorAll('.m-btn').forEach(b=>b.classList.remove('sel'));selM=null;selS=0;loadMoodH()}
     else showT('Could not save. Try again.');
   }catch{showT('Connection error.')}
   finally{b.disabled=false;b.textContent='Save mood'}
@@ -827,63 +995,41 @@ async function loadMoodH(){
 }
 function renderMood(logs){
   const EM={5:'😄',4:'🙂',3:'😐',2:'😔',1:'😢'};
-  // Desktop chart
-  const dcc=document.getElementById('ccard');
-  if(dcc){
-    dcc.style.display=logs.length?'block':'none';
-    if(logs.length){
-      const sorted=[...logs].reverse().slice(-14);
-      if(dChart)dChart.destroy();
-      const ctx=document.getElementById('mc').getContext('2d');
-      dChart=new Chart(ctx,{type:'line',data:{labels:sorted.map(l=>new Date(l.timestamp).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Mood',data:sorted.map(l=>l.score),borderColor:'#10a37f',backgroundColor:'rgba(16,163,127,0.07)',borderWidth:2,pointBackgroundColor:'#10a37f',pointRadius:4,tension:0.4,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:6,ticks:{color:'#8e8e8e',stepSize:1,callback:v=>['','😢','😔','😐','🙂','😄',''][v]},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#8e8e8e'},grid:{display:false}}}}});
-    }
+  const cc=document.getElementById('ccard');if(cc)cc.style.display=logs.length?'block':'none';
+  if(logs.length&&cc){
+    const sorted=[...logs].reverse().slice(-14);
+    if(mChart)mChart.destroy();
+    const ctx=document.getElementById('mc').getContext('2d');
+    mChart=new Chart(ctx,{type:'line',data:{labels:sorted.map(l=>new Date(l.timestamp).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Mood',data:sorted.map(l=>l.score),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.06)',borderWidth:2,pointBackgroundColor:'#10b981',pointRadius:4,tension:0.4,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:6,ticks:{color:'#525252',stepSize:1,callback:v=>['','😢','😔','😐','🙂','😄',''][v]},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#525252'},grid:{display:false}}}}});
   }
-  // Mobile chart
-  const mcc=document.getElementById('m-ccard');
-  if(mcc){
-    mcc.style.display=logs.length?'block':'none';
-    if(logs.length){
-      const sorted=[...logs].reverse().slice(-14);
-      if(mMChart)mMChart.destroy();
-      const ctx=document.getElementById('m-mc').getContext('2d');
-      mMChart=new Chart(ctx,{type:'line',data:{labels:sorted.map(l=>new Date(l.timestamp).toLocaleDateString('en',{month:'short',day:'numeric'})),datasets:[{label:'Mood',data:sorted.map(l=>l.score),borderColor:'#10a37f',backgroundColor:'rgba(16,163,127,0.08)',borderWidth:2,pointBackgroundColor:'#10a37f',pointRadius:4,tension:0.4,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:6,ticks:{color:'#8e8e93',stepSize:1,callback:v=>['','😢','😔','😐','🙂','😄',''][v]},grid:{color:'#f0f0f0'}},x:{ticks:{color:'#8e8e93'},grid:{display:false}}}}});
-    }
-  }
-  const logsHtml=logs.length?logs.slice(0,10).map(l=>`<div class="mlog"><div class="mlog-e">${EM[l.score]||'😐'}</div><div class="mlog-i"><div class="mlog-n">${esc(l.mood.split(' ').slice(1).join(' ')||l.mood)}</div><div class="mlog-m">${new Date(l.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}${l.note?` · ${esc(l.note)}`:''}</div></div><div class="mlog-b">${l.score}/5</div></div>`).join(''):'<div class="empty"><div class="empty-i">😊</div>No logs yet.</div>';
-  const mLogsHtml=logs.length?logs.slice(0,10).map(l=>`<div class="m-mlog"><div class="m-mlog-e">${EM[l.score]||'😐'}</div><div class="m-mlog-i"><div class="m-mlog-n">${esc(l.mood.split(' ').slice(1).join(' ')||l.mood)}</div><div class="m-mlog-m">${new Date(l.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}${l.note?` · ${esc(l.note)}`:''}</div></div><div class="m-mlog-b">${l.score}/5</div></div>`).join(''):'<div class="m-empty"><div class="m-empty-i">😊</div>No logs yet.</div>';
-  const ml=document.getElementById('mlogs');if(ml)ml.innerHTML=logsHtml;
-  const mml=document.getElementById('m-mlogs');if(mml)mml.innerHTML=mLogsHtml;
+  const ml=document.getElementById('mlogs');if(ml)ml.innerHTML=logs.length?logs.slice(0,10).map(l=>`<div class="m-log"><div class="ml-e">${EM[l.score]||'😐'}</div><div class="ml-i"><div class="ml-n">${esc(l.mood.split(' ').slice(1).join(' ')||l.mood)}</div><div class="ml-m">${new Date(l.timestamp).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}${l.note?` · ${esc(l.note)}`:''}</div></div><div class="ml-b">${l.score}/5</div></div>`).join(''):'<div class="empty-s"><div class="empty-i">😊</div>No mood logs yet.</div>';
 }
 
 // EXERCISES
 const EX=[
   {id:'478',emoji:'🌬️',name:'4-7-8 Breathing',desc:'Activates your parasympathetic nervous system to quickly calm anxiety.',tags:['Breathing','Quick relief'],dur:'5 min',type:'breath',cycles:[{l:'Inhale',d:4,s:1.5},{l:'Hold',d:7,s:1.5},{l:'Exhale',d:8,s:1}],steps:[{t:'Exhale completely',d:'Breathe out through your mouth fully.'},{t:'Inhale for 4',d:'Inhale through your nose for 4 counts.'},{t:'Hold for 7',d:'Hold your breath for 7 counts.'},{t:'Exhale for 8',d:'Exhale for 8 counts. Repeat 4 times.'}]},
-  {id:'box',emoji:'⬜',name:'Box Breathing',desc:'Used by Navy SEALs to stay calm. Equal inhale, hold, exhale, hold.',tags:['Breathing','Focus'],dur:'5 min',type:'breath',cycles:[{l:'Inhale',d:4,s:1.4},{l:'Hold',d:4,s:1.4},{l:'Exhale',d:4,s:1},{l:'Hold',d:4,s:1}],steps:[{t:'Inhale 4',d:'Breathe in for 4 counts.'},{t:'Hold 4',d:'Hold for 4 counts.'},{t:'Exhale 4',d:'Breathe out for 4 counts.'},{t:'Hold 4',d:'Hold empty 4 counts. Repeat.'}]},
-  {id:'54321',emoji:'🌿',name:'5-4-3-2-1 Grounding',desc:'Anchors you in the present and stops anxiety spirals.',tags:['Grounding','Panic'],dur:'5 min',type:'steps',steps:[{t:'5 things you SEE',d:'Name 5 things visible right now.'},{t:'4 things you TOUCH',d:'Feel 4 surfaces or textures.'},{t:'3 things you HEAR',d:'Listen for 3 sounds.'},{t:'2 things you SMELL',d:'Notice 2 scents.'},{t:'1 thing you TASTE',d:'Notice taste. Take a breath.'}]},
-  {id:'pmr',emoji:'💪',name:'Progressive Muscle Relaxation',desc:'Tense and release muscle groups to release anxiety tension.',tags:['Body','Sleep'],dur:'10 min',type:'timer',secs:600,steps:[{t:'Feet',d:'Curl toes 5s, release.'},{t:'Legs',d:'Squeeze thighs 5s, release.'},{t:'Stomach',d:'Tighten abs 5s, release.'},{t:'Arms',d:'Make fists 5s, release.'},{t:'Shoulders',d:'Shrug to ears 5s, drop.'},{t:'Face',d:'Scrunch face 5s, relax.'}]},
-  {id:'scan',emoji:'🧠',name:'Mindful Body Scan',desc:'Guides awareness through your body releasing tension.',tags:['Meditation','Sleep'],dur:'10 min',type:'timer',secs:600,steps:[{t:'Get comfortable',d:'Lie down. Close eyes. 3 deep breaths.'},{t:'Feet',d:'Bring attention to feet.'},{t:'Move upward',d:'Travel through legs, hips, chest, arms.'},{t:'Head',d:'Notice jaw and face. Let everything soften.'},{t:'Rest',d:'Feel complete relaxation.'}]},
-  {id:'journal',emoji:'📓',name:'Anxiety Journaling',desc:'Write worries to gain perspective and reduce their power.',tags:['Journaling','Daily'],dur:'10 min',type:'steps',steps:[{t:'Write the worry',d:'What are you anxious about?'},{t:'Rate 1-10',d:'How intense is the feeling?'},{t:'Evidence',d:'What supports this worry? What argues against it?'},{t:'Outcomes',d:'Best case? Worst case?'},{t:'Realistic outcome',d:'What actually will happen?'},{t:'Action step',d:'One small thing you can do right now?'}]},
-  {id:'cold',emoji:'💧',name:'Cold Water Reset',desc:'Instantly slows heart rate and calms panic via dive reflex.',tags:['Quick relief','Panic'],dur:'2 min',type:'steps',steps:[{t:'Get cold water',d:'Fill a bowl with ice cold water.'},{t:'Deep breath',d:'Inhale slowly.'},{t:'Submerge face',d:'Face in cold water 15-30 seconds.'},{t:'Feel it work',d:'Heart rate slows — dive reflex activated.'},{t:'Repeat',d:'2-3 times for acute panic.'}]},
-  {id:'gratitude',emoji:'🙏',name:'Gratitude Practice',desc:'Rewires the anxious brain toward positivity.',tags:['Positivity','Daily'],dur:'5 min',type:'steps',steps:[{t:'3 good things',d:'Name 3 things that went well today.'},{t:'Why they happened',d:'Write the reason each happened.'},{t:'Savour',d:'30 seconds of genuine gratitude each.'},{t:'Thank someone',d:'Short thank you to someone who helped.'},{t:'Make it a habit',d:'21 nights for lasting change.'}]}
+  {id:'box',emoji:'⬜',name:'Box Breathing',desc:'Used by Navy SEALs to stay calm. Equal inhale, hold, exhale, hold.',tags:['Breathing','Focus'],dur:'5 min',type:'breath',cycles:[{l:'Inhale',d:4,s:1.4},{l:'Hold',d:4,s:1.4},{l:'Exhale',d:4,s:1},{l:'Hold',d:4,s:1}],steps:[{t:'Inhale 4',d:'Breathe in slowly.'},{t:'Hold 4',d:'Hold breath.'},{t:'Exhale 4',d:'Breathe out slowly.'},{t:'Hold 4',d:'Hold empty. Repeat.'}]},
+  {id:'54321',emoji:'🌿',name:'5-4-3-2-1 Grounding',desc:'Anchors you in the present moment and stops anxiety spirals.',tags:['Grounding','Panic'],dur:'5 min',type:'steps',steps:[{t:'5 things you SEE',d:'Name 5 visible things.'},{t:'4 things you TOUCH',d:'Feel 4 surfaces.'},{t:'3 things you HEAR',d:'Listen for 3 sounds.'},{t:'2 things you SMELL',d:'Notice 2 scents.'},{t:'1 thing you TASTE',d:'Notice taste. Breathe.'}]},
+  {id:'pmr',emoji:'💪',name:'Progressive Muscle Relaxation',desc:'Tense and release muscles to melt physical anxiety tension.',tags:['Body','Sleep'],dur:'10 min',type:'timer',secs:600,steps:[{t:'Feet',d:'Curl toes 5s, release.'},{t:'Legs',d:'Squeeze thighs 5s, release.'},{t:'Stomach',d:'Tighten abs 5s, release.'},{t:'Arms',d:'Make fists 5s, release.'},{t:'Shoulders',d:'Shrug 5s, drop.'},{t:'Face',d:'Scrunch 5s, relax.'}]},
+  {id:'scan',emoji:'🧠',name:'Mindful Body Scan',desc:'Guide awareness through your body releasing tension and cultivating calm.',tags:['Meditation','Sleep'],dur:'10 min',type:'timer',secs:600,steps:[{t:'Get comfortable',d:'Lie down. Close eyes. 3 deep breaths.'},{t:'Start at feet',d:'Bring attention to feet.'},{t:'Move upward',d:'Travel through legs, stomach, chest, arms.'},{t:'Reach head',d:'Notice jaw and face. Let everything soften.'},{t:'Rest',d:'Feel complete relaxation.'}]},
+  {id:'journal',emoji:'📓',name:'Anxiety Journaling',desc:'Write your worries to gain perspective and reduce their power.',tags:['Journaling','Daily'],dur:'10 min',type:'steps',steps:[{t:'Write the worry',d:'What are you anxious about?'},{t:'Rate 1-10',d:'How intense is the feeling?'},{t:'Evidence',d:'What supports this fear? What argues against it?'},{t:'Outcomes',d:'Best case? Worst case?'},{t:'Realistic outcome',d:'What will most likely happen?'},{t:'Action step',d:'One small thing you can do now?'}]},
+  {id:'cold',emoji:'💧',name:'Cold Water Reset',desc:'Instantly slows heart rate and calms panic via the dive reflex.',tags:['Quick relief','Panic'],dur:'2 min',type:'steps',steps:[{t:'Get cold water',d:'Fill a bowl with ice cold water.'},{t:'Deep breath in',d:'Inhale slowly.'},{t:'Submerge face',d:'Face in cold water 15-30 seconds.'},{t:'Feel it work',d:'Heart rate slows automatically.'},{t:'Repeat',d:'2-3 times for acute panic.'}]},
+  {id:'gratitude',emoji:'🙏',name:'Gratitude Practice',desc:'Rewires the anxious brain toward positivity with daily practice.',tags:['Positivity','Daily'],dur:'5 min',type:'steps',steps:[{t:'3 good things',d:'Name 3 things that went well today.'},{t:'Why they happened',d:'Write the reason each happened.'},{t:'Savour',d:'30 seconds of genuine gratitude each.'},{t:'Thank someone',d:'Short thank you to one person.'},{t:'Make it a habit',d:'21 nights for lasting brain change.'}]}
 ];
 function renderEx(){
-  const dg=document.getElementById('egrid');
-  const mg=document.getElementById('m-egrid');
-  const dhtml=EX.map(e=>`<div class="ecard" onclick="openEx('${e.id}')"><div class="eemoji">${e.emoji}</div><div class="ename">${e.name}</div><div class="edesc">${e.desc}</div><div class="etags">${e.tags.map(t=>`<span class="etag">${t}</span>`).join('')}</div><div class="edur">⏱ ${e.dur}</div></div>`).join('');
-  const mhtml=EX.map(e=>`<div class="m-ecard" onclick="openEx('${e.id}')"><div class="m-eemoji">${e.emoji}</div><div class="m-ename">${e.name}</div><div class="m-edesc">${e.desc}</div><div class="m-etags">${e.tags.map(t=>`<span class="m-etag">${t}</span>`).join('')}</div><div class="m-edur">⏱ ${e.dur}</div></div>`).join('');
-  if(dg)dg.innerHTML=dhtml;
-  if(mg)mg.innerHTML=mhtml;
+  const g=document.getElementById('egrid');if(!g)return;
+  g.innerHTML=EX.map(e=>`<div class="ex-card" onclick="openEx('${e.id}')"><div class="ex-emoji">${e.emoji}</div><div class="ex-name">${e.name}</div><div class="ex-desc">${e.desc}</div><div class="ex-tags">${e.tags.map(t=>`<span class="ex-tag">${t}</span>`).join('')}</div><div class="ex-dur">⏱ ${e.dur}</div></div>`).join('');
 }
 function openEx(id){
   const ex=EX.find(e=>e.id===id);if(!ex)return;
-  let h=`<div class="memo">${ex.emoji}</div><div class="mtitle">${ex.name}</div><div class="mdesc">${ex.desc}</div>`;
+  let h=`<div class="m-emo">${ex.emoji}</div><div class="m-ttl">${ex.name}</div><div class="m-dsc">${ex.desc}</div>`;
   if(ex.type==='breath'){
     h+=`<div class="bwrap"><div class="bcirc" id="bc">Ready</div><div class="bcnt" id="bcnt"></div><div class="blbl" id="blbl">Press Start to begin</div><div class="mbtns" style="justify-content:center"><button class="mbtn2 p" onclick="startB('${id}')">▶ Start</button><button class="mbtn2 s" onclick="stopB()">■ Stop</button></div></div>`;
   }else if(ex.type==='timer'){
     const m=Math.floor(ex.secs/60),s=ex.secs%60;
     h+=`<div class="twrap"><svg class="tsvg" viewBox="0 0 140 140"><circle class="tbg" cx="70" cy="70" r="54"/><circle class="tprog" id="tprog" cx="70" cy="70" r="54" stroke-dasharray="${2*Math.PI*54}" stroke-dashoffset="0"/><text class="ttxt" id="ttxt" x="70" y="70">${m}:${String(s).padStart(2,'0')}</text></svg><div class="mbtns" style="justify-content:center"><button class="mbtn2 p" onclick="startT(${ex.secs})">▶ Start</button><button class="mbtn2 s" onclick="stopT()">■ Stop</button></div></div>`;
   }
-  h+=`<div class="steps">${ex.steps.map((s,i)=>`<div class="step"><div class="snum">${i+1}</div><div class="sbody"><div class="stitle2">${s.t}</div><div class="stext">${s.d}</div></div></div>`).join('')}</div>`;
+  h+=`<div class="msteps">${ex.steps.map((s,i)=>`<div class="mstep"><div class="msnum">${i+1}</div><div class="msbody"><div class="mst">${s.t}</div><div class="msd">${s.d}</div></div></div>`).join('')}</div>`;
   document.getElementById('mbody').innerHTML=h;
   document.getElementById('ov').classList.add('on');
 }
@@ -893,13 +1039,12 @@ function startB(id){
   const ex=EX.find(e=>e.id===id);if(!ex?.cycles)return;
   stopB();let ci=0,cnt=0;
   const bc=document.getElementById('bc'),bk=document.getElementById('bcnt'),bl=document.getElementById('blbl');
-  function run(){const c=ex.cycles[ci%ex.cycles.length];bc.textContent=c.l;bl.textContent=c.l;bc.style.transform=`scale(${c.s})`;bc.style.background=c.s>1.2?'rgba(16,163,127,0.28)':'rgba(16,163,127,0.1)';bc.style.borderColor=c.s>1.2?'#10a37f':'rgba(16,163,127,0.35)';cnt=c.d;bk.textContent=cnt;bInt=setInterval(()=>{cnt--;bk.textContent=cnt;if(cnt<=0){clearInterval(bInt);ci++;run()}},1000);}
-  run();
+  function run(){const c=ex.cycles[ci%ex.cycles.length];bc.textContent=c.l;bl.textContent=c.l;bc.style.transform=`scale(${c.s})`;bc.style.background=c.s>1.2?'rgba(16,185,129,0.2)':'rgba(16,185,129,0.07)';bc.style.borderColor=c.s>1.2?'var(--acc)':'rgba(16,185,129,0.35)';cnt=c.d;bk.textContent=cnt;bInt=setInterval(()=>{cnt--;bk.textContent=cnt;if(cnt<=0){clearInterval(bInt);ci++;run()}},1000);}run();
 }
 function stopB(){
   if(bInt){clearInterval(bInt);bInt=null}
   const bc=document.getElementById('bc'),bk=document.getElementById('bcnt'),bl=document.getElementById('blbl');
-  if(bc){bc.textContent='Ready';bc.style.transform='scale(1)';bc.style.background='rgba(16,163,127,0.1)';bc.style.borderColor='rgba(16,163,127,0.35)'}
+  if(bc){bc.textContent='Ready';bc.style.transform='scale(1)';bc.style.background='rgba(16,185,129,0.07)';bc.style.borderColor='rgba(16,185,129,0.35)'}
   if(bk)bk.textContent='';if(bl)bl.textContent='Press Start to begin';
 }
 function startT(total){stopT();let rem=total;const pg=document.getElementById('tprog'),tx=document.getElementById('ttxt');const c=2*Math.PI*54;function u(){pg.style.strokeDashoffset=c*(1-rem/total);const m=Math.floor(rem/60),s=rem%60;tx.textContent=`${m}:${String(s).padStart(2,'0')}`;if(rem<=0){clearInterval(tInt);tx.textContent='Done!';showT('Exercise complete! 🎉')}}u();tInt=setInterval(()=>{rem--;u()},1000);}
