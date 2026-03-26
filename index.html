@@ -33,9 +33,9 @@
   --danger-pale:#ffebee;
 
   /* Clay Morphism Shadows */
-  --clay-shadow:6px 6px 12px rgba(15,32,68,0.12), -4px -4px 10px rgba(255,255,255,0.9);
+  ----clay-shadow:2px 2px 6px rgba(0,0,0,0.08);
   --clay-shadow-sm:3px 3px 8px rgba(15,32,68,0.1), -2px -2px 6px rgba(255,255,255,0.85);
-  --clay-shadow-lg:8px 8px 20px rgba(15,32,68,0.15), -6px -6px 16px rgba(255,255,255,0.95);
+  --clay-shadow-lg:4px 4px 10px rgba(0,0,0,0.1);
   --clay-shadow-inset:inset 3px 3px 8px rgba(15,32,68,0.12), inset -3px -3px 8px rgba(255,255,255,0.9);
   --clay-pressed:inset 4px 4px 10px rgba(15,32,68,0.15), inset -2px -2px 6px rgba(255,255,255,0.7);
 
@@ -45,8 +45,19 @@
 }
 
 /* MOBILE FIX: Use dvh (Dynamic Viewport Height) for mobile browser address bars */
-html,body{height:100dvh;font-family:var(--font);background:var(--clay-bg);color:var(--text);overflow:hidden;width:100%}
-body{height:100dvh;position: fixed; overflow: hidden;} /* Prevents bounce scroll on iOS */
+html,body{
+  height:auto;
+  font-family:var(--font);
+  background:var(--clay-bg);
+  color:var(--text);
+  overflow-x:hidden;
+  width:100%
+}
+
+body{
+  position: relative;
+}
+  /* Prevents bounce scroll on iOS */
 
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--baby);border-radius:2px}
 
@@ -57,7 +68,8 @@ body{height:100dvh;position: fixed; overflow: hidden;} /* Prevents bounce scroll
 #landing.hide{display:none}
 
 /* NAV */
-.nav{position:sticky;top:0;z-index:100;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(232,244,253,0.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(137,196,244,0.2)}
+.nav{position:sticky;top:0;z-index:100;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(232,244,253,0.85);background: var(--clay-bg);
+  backdrop-filter: none;border-bottom:1px solid rgba(137,196,244,0.2)}
 .nav-brand{display:flex;align-items:center;gap:.65rem;font-size:1.15rem;font-weight:800;color:var(--navy);letter-spacing:-.03em}
 .nav-brand-i{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy3));display:flex;align-items:center;justify-content:center;font-size:.95rem;box-shadow:var(--clay-shadow-sm)}
 .nav-btns{display:flex;align-items:center;gap:.6rem}
@@ -397,6 +409,21 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   .section{padding:3.5rem 1.25rem}
   .hero-stats{gap:1.25rem}
   footer{flex-direction:column;text-align:center;padding:1.25rem}
+}
+  @media (max-width: 768px) {
+  * {
+    backdrop-filter: none !important;
+    filter: none !important;
+  }
+
+  .feat-clay,
+  .t-clay,
+  .excard,
+  .stat-clay,
+  .step-clay,
+  .mrow .mbub {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
+  }
 }
 </style>
 </head>
