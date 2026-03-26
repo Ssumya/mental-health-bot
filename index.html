@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>SafeSpace · AI Mental Health</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
@@ -43,14 +43,17 @@
   --font:'Plus Jakarta Sans',-apple-system,sans-serif;
   --sw:270px;
 }
-html,body{height:100%;font-family:var(--font);background:var(--clay-bg);color:var(--text);overflow:hidden}
-body{height:100dvh}
+
+/* MOBILE FIX: Use dvh (Dynamic Viewport Height) for mobile browser address bars */
+html,body{height:100dvh;font-family:var(--font);background:var(--clay-bg);color:var(--text);overflow:hidden;width:100%}
+body{height:100dvh;position: fixed; overflow: hidden;} /* Prevents bounce scroll on iOS */
+
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--baby);border-radius:2px}
 
 /* ══════════════════════════════════════════════════
    LANDING
 ══════════════════════════════════════════════════ */
-#landing{height:100dvh;display:flex;flex-direction:column;overflow-y:auto;background:var(--clay-bg)}
+#landing{height:100dvh;display:flex;flex-direction:column;overflow-y:auto;background:var(--clay-bg);-webkit-overflow-scrolling: touch;}
 #landing.hide{display:none}
 
 /* NAV */
@@ -189,7 +192,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .sb-ni{display:flex;align-items:center;gap:.55rem;width:100%;padding:.48rem .55rem;background:none;border:none;border-radius:12px;color:var(--text2);font-family:var(--font);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;text-align:left}
 .sb-ni:hover{background:var(--clay-bg);color:var(--navy)}.sb-ni.on{background:var(--baby3);color:var(--navy);font-weight:600;box-shadow:var(--clay-shadow-sm)}
 .sb-ni svg{width:15px;height:15px;flex-shrink:0;opacity:.6}.sb-ni.on svg{opacity:1}
-.sb-sess{flex:1;overflow-y:auto;padding:.2rem .8rem .8rem}
+.sb-sess{flex:1;overflow-y:auto;padding:.2rem .8rem .8rem;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .sb-slbl{font-size:.63rem;font-weight:700;color:var(--text4);letter-spacing:.08em;text-transform:uppercase;padding:.3rem .55rem .18rem}
 .si{padding:.42rem .55rem;border-radius:10px;cursor:pointer;transition:all .2s;margin-bottom:1px}
 .si:hover{background:var(--clay-bg)}.si.on{background:var(--baby3);box-shadow:var(--clay-shadow-sm)}
@@ -233,7 +236,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .m-dr-ni:hover{background:var(--clay-bg)}.m-dr-ni.on{background:var(--baby3);color:var(--navy);font-weight:600}
 .m-dr-ni svg{width:16px;height:16px;flex-shrink:0;opacity:.6}.m-dr-ni.on svg{opacity:1}
 .m-dr-slbl{font-size:.65rem;font-weight:700;color:var(--text4);text-transform:uppercase;letter-spacing:.08em;padding:.6rem 1rem .25rem}
-.m-dr-sess{flex:1;overflow-y:auto;padding:0 1rem .75rem}
+.m-dr-sess{flex:1;overflow-y:auto;padding:0 1rem .75rem;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .m-si{padding:.46rem .58rem;border-radius:10px;cursor:pointer;transition:all .15s;margin-bottom:1px}
 .m-si:hover{background:var(--clay-bg)}.m-si.on{background:var(--baby3)}
 .m-si-t{font-size:.81rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}.m-si.on .m-si-t{color:var(--navy);font-weight:600}
@@ -251,7 +254,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .pg.on{display:flex}
 
 /* CHAT */
-.msgs{flex:1;overflow-y:auto;padding:1.25rem 0;display:flex;flex-direction:column}
+.msgs{flex:1;overflow-y:auto;padding:1.25rem 0;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .welcome-clay{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2.5rem 1.5rem;text-align:center}
 .wc-icon{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy3));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 1.25rem;box-shadow:6px 6px 16px rgba(15,32,68,0.25),-4px -4px 12px rgba(255,255,255,0.8)}
 .wc-title{font-size:1.65rem;font-weight:800;color:var(--navy);margin-bottom:.45rem;letter-spacing:-.04em}
@@ -282,8 +285,8 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .vbar{background:var(--baby4);border-top:1px solid rgba(137,196,244,.3);padding:.5rem 1.35rem;font-size:.79rem;color:var(--text2);display:none;flex-shrink:0;align-items:center;justify-content:space-between}
 .vbar-btn{padding:.32rem .85rem;background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border:none;border-radius:20px;font-family:var(--font);font-size:.76rem;font-weight:600;cursor:pointer;box-shadow:var(--clay-shadow-sm)}
 
-/* Input */
-.iarea{padding:.75rem 1.35rem 1.1rem;flex-shrink:0;background:var(--clay-card);border-top:1px solid rgba(137,196,244,0.15)}
+/* Input - Added Keyboard padding support */
+.iarea{padding:.75rem 1.35rem 1.1rem;flex-shrink:0;background:var(--clay-card);border-top:1px solid rgba(137,196,244,0.15); padding-bottom: calc(1rem + env(safe-area-inset-bottom));}
 .ibox{max-width:780px;margin:0 auto;background:var(--clay-bg);border-radius:20px;position:relative;box-shadow:var(--clay-shadow-inset);display:flex;align-items:flex-end;gap:.5rem;padding:.15rem .55rem .15rem 1rem}
 .ci{flex:1;background:none;border:none;color:var(--navy);font-family:var(--font);font-size:.9rem;resize:none;outline:none;min-height:46px;max-height:160px;line-height:1.55;padding:.65rem 0}
 .ci::placeholder{color:var(--text4)}
@@ -293,7 +296,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .ifooter{text-align:center;font-size:.68rem;color:var(--text4);margin-top:.45rem;max-width:780px;margin-left:auto;margin-right:auto}
 
 /* SCROLL PAGES */
-.spg{flex:1;overflow-y:auto;padding:1.35rem;background:var(--clay-bg)}
+.spg{flex:1;overflow-y:auto;padding:1.35rem;background:var(--clay-bg);-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .spin{max-width:780px;margin:0 auto}
 .ptitle{font-size:1.35rem;font-weight:800;color:var(--navy);margin-bottom:1.1rem;letter-spacing:-.04em}
 
@@ -366,7 +369,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(8px);background:var(--navy);color:#fff;padding:.58rem 1.2rem;border-radius:20px;font-size:.8rem;box-shadow:var(--clay-shadow);opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* RESPONSIVE */
+/* RESPONSIVE - Consolidated mobile rules */
 @media(min-width:769px){
   .m-topbar,.m-drawer,.m-dov{display:none!important}
   .app-layout{display:flex!important}
@@ -399,7 +402,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 </head>
 <body>
 
-<!-- LANDING -->
 <div id="landing">
   <nav class="nav">
     <div class="nav-brand"><div class="nav-brand-i">🌿</div>SafeSpace</div>
@@ -425,7 +427,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
     </div>
   </section>
 
-  <!-- FEATURES -->
   <div class="section" id="features">
     <div style="text-align:center;margin-bottom:.5rem"><div class="sec-badge">✦ Features</div></div>
     <h2 class="sec-title" style="text-align:center">Everything you need to heal</h2>
@@ -440,7 +441,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
     </div>
   </div>
 
-  <!-- DEMO -->
   <div class="demo-wrap" id="demo">
     <div>
       <div class="sec-badge">✦ App Preview</div>
@@ -468,7 +468,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
     </div>
   </div>
 
-  <!-- HOW IT WORKS -->
   <div class="section" style="text-align:center">
     <div class="sec-badge">✦ How it works</div>
     <h2 class="sec-title">3 simple steps to feel better</h2>
@@ -479,7 +478,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
     </div>
   </div>
 
-  <!-- TESTIMONIALS -->
   <div class="section">
     <div style="text-align:center;margin-bottom:.5rem"><div class="sec-badge">✦ Stories</div></div>
     <h2 class="sec-title" style="text-align:center">Real people, real results</h2>
@@ -490,7 +488,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
     </div>
   </div>
 
-  <!-- CTA -->
   <div style="padding:0 2rem 4rem">
     <div class="cta-clay">
       <h2 class="cta-title">Aap deserve karte hain<br>better feel karna. 💙</h2>
@@ -505,7 +502,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   </footer>
 </div>
 
-<!-- AUTH MODAL -->
 <div class="auth-ov" id="auth-ov">
   <div class="auth-box" style="position:relative">
     <button class="auth-close" onclick="closeAuth()">✕</button>
@@ -531,16 +527,13 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
-  <!-- Mobile topbar -->
   <div class="m-topbar">
     <button class="m-topbar-btn" onclick="openDr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="21" height="21"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
     <div class="m-topbar-title" id="m-htitle">🌿 SafeSpace AI</div>
     <button class="m-topbar-btn" onclick="newChat()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="21" height="21"><path d="M12 5v14M5 12h14"/></svg></button>
   </div>
 
-  <!-- Mobile drawer -->
   <div class="m-dov" id="m-dov" onclick="closeDr()"></div>
   <div class="m-drawer" id="m-drawer">
     <div class="m-dr-top">
@@ -566,7 +559,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   </div>
 
   <div class="app-layout">
-    <!-- Desktop Sidebar -->
     <div class="sb">
       <div class="sb-top">
         <div class="sb-brand"><div class="sb-brand-i">🌿</div><div class="sb-brand-n">SafeSpace</div></div>
@@ -592,7 +584,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
       </div>
     </div>
 
-    <!-- Main -->
     <div class="d-main">
       <div class="d-hdr">
         <div class="d-hdr-dot"></div>
@@ -600,7 +591,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
         <div class="d-hdr-r" id="hright"></div>
       </div>
 
-      <!-- Chat -->
       <div class="pg on" id="pg-chat">
         <div class="msgs" id="msgs">
           <div class="welcome-clay" id="welc">
@@ -627,7 +617,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
         </div>
       </div>
 
-      <!-- History -->
       <div class="pg" id="pg-history">
         <div class="spg"><div class="spin">
           <div class="ptitle">Chat history</div>
@@ -635,7 +624,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
         </div></div>
       </div>
 
-      <!-- Mood -->
       <div class="pg" id="pg-mood">
         <div class="spg"><div class="spin">
           <div class="ptitle">Mood tracker</div>
@@ -655,7 +643,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
         </div></div>
       </div>
 
-      <!-- Exercises -->
       <div class="pg" id="pg-exercises">
         <div class="spg"><div class="spin">
           <div class="ptitle">Anxiety relief exercises</div>
@@ -666,7 +653,6 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   </div>
 </div>
 
-<!-- Modal -->
 <div class="ov" id="ov" onclick="clov(event)"><div class="modal"><button class="mcls" onclick="clmod()">✕</button><div id="mbody"></div></div></div>
 <div class="toast" id="toast"></div>
 
@@ -692,6 +678,19 @@ setTimeout(()=>{
 
 document.addEventListener('DOMContentLoaded',()=>{
   renderEx();
+  // MOBILE KEYBOARD FIX: Automatically scroll to bottom when keyboard appears
+  const ciInput = document.getElementById('ci');
+  const msgsBox = document.getElementById('msgs');
+  
+  if(ciInput) {
+    ciInput.addEventListener('focus', () => {
+      setTimeout(() => {
+        msgsBox.scrollTop = msgsBox.scrollHeight;
+        window.scrollTo(0, 0); // Reset body scroll to 0
+      }, 300);
+    });
+  }
+
   if(token&&me){showApp();init()}
 });
 
@@ -719,7 +718,7 @@ async function doLogin(){
     const d=await r.json();
     if(!r.ok){serr(d.detail||'Login failed. Check your credentials.');return}
     sv(d.token,d.user);closeAuth();showApp();init();
-  }catch(e){serr('Cannot connect to server. Make sure the app is awake at: '+API+'/health')}
+  }catch(e){serr('Cannot connect to server. Make sure the app is awake.')}
   finally{b.disabled=false;b.textContent='Sign in'}
 }
 async function doReg(){
