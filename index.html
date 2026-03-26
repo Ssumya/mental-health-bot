@@ -45,8 +45,8 @@
 }
 
 /* MOBILE FIX: Use dvh (Dynamic Viewport Height) for mobile browser address bars */
-html,body{height:100dvh;font-family:var(--font);background:var(--clay-bg);color:var(--text);overflow:hidden;width:100%}
-body{height:100dvh;position: fixed; overflow: hidden;} /* Prevents bounce scroll on iOS */
+html,body{height:100dvh;font-family:var(--font);background:var(--clay-bg);color:var(--text);overflow:hidden;width:100%;overscroll-behavior:none}
+body{height:100dvh;overflow:hidden;} /* overscroll-behavior:none prevents iOS bounce without breaking layout */
 
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--baby);border-radius:2px}
 
@@ -175,7 +175,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 /* ══════════════════════════════════════════════════
    APP
 ══════════════════════════════════════════════════ */
-#app{display:none;height:100dvh;overflow:hidden;background:var(--clay-bg)}
+#app{display:none;height:100dvh;overflow:hidden;background:var(--clay-bg);overscroll-behavior:none}
 #app.on{display:flex;flex-direction:column}
 .app-layout{display:flex;flex:1;overflow:hidden;min-height:0}
 
@@ -296,7 +296,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .ifooter{text-align:center;font-size:.68rem;color:var(--text4);margin-top:.45rem;max-width:780px;margin-left:auto;margin-right:auto}
 
 /* SCROLL PAGES */
-.spg{flex:1;overflow-y:auto;padding:1.35rem;background:var(--clay-bg);-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.spg{flex:1;overflow-y:auto;padding:1.35rem;background:var(--clay-bg);-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain}
 .spin{max-width:780px;margin:0 auto}
 .ptitle{font-size:1.35rem;font-weight:800;color:var(--navy);margin-bottom:1.1rem;letter-spacing:-.04em}
 
@@ -686,8 +686,20 @@ document.addEventListener('DOMContentLoaded',()=>{
     ciInput.addEventListener('focus', () => {
       setTimeout(() => {
         msgsBox.scrollTop = msgsBox.scrollHeight;
-        window.scrollTo(0, 0); // Reset body scroll to 0
-      }, 300);
+        // NOTE: window.scrollTo removed — it fought native keyboard scroll and caused freeze on mobile
+      }, 400);
+    });
+  }
+
+  // MOBILE KEYBOARD FIX: Use visualViewport API to reflow layout when keyboard opens/closes
+  if(window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const app = document.getElementById('app');
+      if(app && app.classList.contains('on')) {
+        app.style.height = window.visualViewport.height + 'px';
+        const msgs = document.getElementById('msgs');
+        if(msgs) setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 100);
+      }
     });
   }
 
@@ -809,7 +821,13 @@ async function loadSess2(id,title){
 
 // CHAT
 function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}
-function rsz(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,160)+'px'}
+function rsz(el){
+  // requestAnimationFrame prevents layout thrash loop on mobile browsers
+  requestAnimationFrame(() => {
+    el.style.height='auto';
+    el.style.height=Math.min(el.scrollHeight,160)+'px';
+  });
+}
 function qs(el){const inp=document.getElementById('ci');if(inp){inp.value=el.textContent;send()}}
 
 async function send(){
