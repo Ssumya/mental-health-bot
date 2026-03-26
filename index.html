@@ -45,8 +45,19 @@
 }
 
 /* MOBILE FIX: Use dvh (Dynamic Viewport Height) for mobile browser address bars */
-html,body{height:100dvh;font-family:var(--font);background:var(--clay-bg);color:var(--text);overflow:hidden;width:100%;overscroll-behavior:none}
-body{height:100dvh;overflow:hidden;} /* overscroll-behavior:none prevents iOS bounce without breaking layout */
+html,body{
+  height:100%;
+  font-family:var(--font);
+  background:var(--clay-bg);
+  color:var(--text);
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  touch-action:manipulation;
+}
+body{
+  min-height:100dvh;
+}
 
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--baby);border-radius:2px}
 
@@ -375,17 +386,139 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   .app-layout{display:flex!important}
   .sb{display:flex!important}
 }
+
 @media(max-width:768px){
+  html,body{
+    overflow:auto !important;
+    height:auto !important;
+    min-height:100%;
+    -webkit-overflow-scrolling:touch;
+    touch-action:manipulation;
+  }
+
+  body{
+    overflow-x:hidden !important;
+  }
+
+  #landing,
+  #app{
+    min-height:100dvh;
+    height:auto !important;
+    overflow:hidden;
+  }
+
   .sb{display:none!important}
-  .app-layout{display:flex!important;flex-direction:column}
-  .d-main{flex:1;overflow:hidden}
+
+  .app-layout{
+    display:flex!important;
+    flex-direction:column;
+    height:100%;
+    min-height:0;
+    overflow:hidden;
+  }
+
+  .d-main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    min-height:0;
+    width:100%;
+  }
+
   .d-hdr{display:none!important}
-  .m-topbar{display:flex!important}
-  .m-drawer,.m-dov{display:block}
-  .msgs{padding:.65rem 0}
-  .mwrap{padding:.35rem .9rem}
-  .iarea{padding:.5rem .85rem .75rem}
-  .spg{padding:.9rem}
+
+  .m-topbar{
+    display:flex!important;
+    position:sticky;
+    top:0;
+    z-index:30;
+  }
+
+  .m-dov{
+    display:block;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .25s ease;
+  }
+
+  .m-dov.on{
+    pointer-events:auto;
+    opacity:1;
+  }
+
+  .m-drawer{
+    display:flex;
+    pointer-events:auto;
+    touch-action:pan-y;
+  }
+
+  .pg{
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+  }
+
+  .msgs{
+    flex:1;
+    overflow-y:auto !important;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding:.65rem 0 1rem;
+  }
+
+  .mwrap{
+    padding:.35rem .9rem;
+  }
+
+  .iarea{
+    padding:.5rem .85rem calc(.75rem + env(safe-area-inset-bottom));
+    position:sticky;
+    bottom:0;
+    z-index:15;
+    background:var(--clay-card);
+  }
+
+  .ibox{
+    align-items:flex-end;
+  }
+
+  .ci{
+    font-size:16px;
+    min-height:44px;
+    max-height:120px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .sbtn{
+    min-width:40px;
+    min-height:40px;
+    touch-action:manipulation;
+  }
+
+  .spg{
+    padding:.9rem;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .auth-ov,
+  .ov{
+    align-items:flex-end;
+    padding:0;
+  }
+
+  .auth-box,
+  .modal{
+    width:100%;
+    max-width:100%;
+    border-radius:24px 24px 0 0;
+    max-height:92dvh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
   .exgrid{grid-template-columns:1fr}
   .wc-prompts{display:none}
   .demo-wrap{grid-template-columns:1fr}
@@ -397,6 +530,48 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
   .section{padding:3.5rem 1.25rem}
   .hero-stats{gap:1.25rem}
   footer{flex-direction:column;text-align:center;padding:1.25rem}
+}
+  /* MOBILE TOUCH FIX */
+button, a, input, textarea, select {
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.m-drawer,
+.auth-box,
+.modal,
+.iarea,
+.m-topbar,
+.msgs,
+.spg,
+.pg,
+.d-main,
+.app-layout {
+  pointer-events: auto;
+}
+
+.m-dov:not(.on),
+.auth-ov:not(.on),
+.ov:not(.on) {
+  pointer-events: none !important;
+}
+
+/* Better mobile scrolling */
+.msgs,
+.spg,
+.auth-box,
+.modal,
+.m-drawer {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent touch dead zones */
+#app,
+#landing,
+.pg,
+.d-main {
+  min-height: 0;
 }
 </style>
 </head>
@@ -957,6 +1132,95 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function showT(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),3000)}
 document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('rp').addEventListener('keydown',e=>{if(e.key==='Enter')doReg()});
+<script>
+/* =========================
+   MOBILE TOUCH FIX
+========================= */
+(function () {
+  const setAppHeight = () => {
+    document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+  };
+
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  window.addEventListener('orientationchange', setAppHeight);
+
+  function cleanupOverlays() {
+    document.querySelectorAll('.m-dov, .auth-ov, .ov').forEach(el => {
+      if (!el.classList.contains('on')) {
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '';
+      } else {
+        el.style.pointerEvents = 'auto';
+      }
+    });
+  }
+
+  const observer = new MutationObserver(cleanupOverlays);
+  document.querySelectorAll('.m-dov, .auth-ov, .ov').forEach(el => {
+    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+
+  cleanupOverlays();
+
+  // Chat input focus fix for mobile keyboard
+  const input = document.querySelector('.ci');
+  if (input) {
+    input.addEventListener('focus', () => {
+      setTimeout(() => {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 250);
+    });
+  }
+
+  // Drawer touch fix
+  const drawer = document.getElementById('m-drawer');
+  const drawerOverlay = document.getElementById('m-dov');
+
+  const originalOpenDr = window.openDr;
+  const originalCloseDr = window.closeDr;
+
+  window.openDr = function () {
+    if (typeof originalOpenDr === 'function') originalOpenDr();
+    if (drawer) drawer.classList.add('open');
+    if (drawerOverlay) drawerOverlay.classList.add('on');
+    document.body.style.overflow = 'hidden';
+    cleanupOverlays();
+  };
+
+  window.closeDr = function () {
+    if (typeof originalCloseDr === 'function') originalCloseDr();
+    if (drawer) drawer.classList.remove('open');
+    if (drawerOverlay) drawerOverlay.classList.remove('on');
+    document.body.style.overflow = '';
+    cleanupOverlays();
+  };
+
+  // Auth modal touch fix
+  const authOv = document.getElementById('auth-ov');
+  if (authOv) {
+    authOv.addEventListener('click', function (e) {
+      if (e.target === authOv && typeof window.closeAuth === 'function') {
+        window.closeAuth();
+      }
+    });
+  }
+
+  // Exercise modal touch fix
+  document.querySelectorAll('.ov').forEach(modalOv => {
+    modalOv.addEventListener('click', function (e) {
+      if (e.target === modalOv) {
+        modalOv.classList.remove('on');
+        cleanupOverlays();
+      }
+    });
+  });
+
+  // Fix buttons not reacting after drawer/modal close
+  document.addEventListener('touchstart', function(){}, {passive:true});
+
+})();
+</script>
 </script>
 </body>
 </html>
