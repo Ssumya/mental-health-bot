@@ -6,3 +6,6 @@ psycopg2-binary
 google-generativeai
 groq
 python-dotenv
+joblib
+scikit-learn
+xgboost
