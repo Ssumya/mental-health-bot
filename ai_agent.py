@@ -1,6 +1,6 @@
 import os
 from groq import Groq
-
+from emotion_model import predict_emotion
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -77,13 +77,25 @@ def get_response(message: str) -> tuple[str, str]:
         if hindi_chars > 0 or any(w in msg_lower for w in ['marna','chahta','chahti','jaan']):
             return EMERGENCY_RESPONSE_HI
         return EMERGENCY_RESPONSE_EN
-
+    emotion = predict_emotion(message)
     try:
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",  # Fastest model
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": message}
+                {
+    "role": "user",
+    "content": f"""
+Predicted emotion from the emotion classification model: {emotion}
+
+Use this predicted emotion only as a contextual signal.
+Do not treat it as a diagnosis or a definitive statement
+about the user's mental health.
+
+User message:
+{message}
+"""
+}
             ],
             max_tokens=300,
             temperature=0.8,
