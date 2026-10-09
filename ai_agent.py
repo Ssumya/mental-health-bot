@@ -301,10 +301,15 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
             )
 
     elif is_sleep:
+        has_duration = bool(re.search(r'\b(\d+|hours?|hrs?|all night|der se|bohot ghante|ghante)\b', msg_lower))
         if is_hindi:
+            if has_duration:
+                intro = "Bohot der se jaag rahe hain! Aap bohot tired feel kar rahe honge 💙 Raat ko neend na aana aur dimaag chalte rehna bohot exhausting hota hai."
+            else:
+                intro = "Neend na aana bohot frustrating ho sakta hai 💙 Par tension mat lo, main aapke saath hoon aur hum milkar body ko relax karenge."
             return (
-                "Bohot der se jaag rahe hain! Aap bohot tired feel kar rahe honge 💙 Raat ko neend na aana aur dimaag chalte rehna bohot exhausting hota hai.\n\n"
-                "Jab aap bohot ghante se awake rehte hain, to dimaag hyper-arousal loop mein chala jata hai jisse sleep delay hoti hai.\n\n"
+                f"{intro}\n\n"
+                "Jab neend aane mein dikkat hoti hai, to dimaag hyper-arousal state mein chala jata hai jisse sleep delay hoti hai.\n\n"
                 "Yahan 3 gentle sleeping exercises hain jo aap abhi try kar sakte hain:\n"
                 "1. **4-7-8 Sleep Breathing**: 4s inhale, 7s hold, 8s exhale (4 cycles) nervous system ko calm karne ke liye.\n"
                 "2. **Progressive Muscle Relaxation**: Pairon se shoulders tak har muscle 5 sec tense aur release karo.\n"
@@ -312,9 +317,13 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
                 "Kya koi specific worry, thought, ya problem aapko raat ko pareshan kar rahi hai? Mujhe batao, hum milkar solution nikalenge taaki dimaag relaxed ho jaye!"
             )
         else:
+            if has_duration:
+                intro = "That's so long, you must be so tired! 💙 Being awake for hours when your body needs rest is so exhausting, but I'm right here with you."
+            else:
+                intro = "Struggling to sleep when you want to rest is so frustrating 💙 But don't worry, I'm right here with you and we can help your body relax."
             return (
-                "That's so long, you must be so tired! 💙 Being awake for hours when your body needs rest is so exhausting, but I'm right here with you.\n\n"
-                "When you've been lying awake for hours, your brain can get trapped in a hyper-arousal loop where worrying about falling asleep actually keeps you awake.\n\n"
+                f"{intro}\n\n"
+                "When sleep doesn't come easily, your brain can get trapped in a hyper-arousal loop where trying to force sleep actually keeps you awake.\n\n"
                 "Here are 3 gentle sleeping exercises to try right now:\n"
                 "1. **4-7-8 Sleep Breathing**: Inhale quietly through your nose for 4s, hold for 7s, and exhale slowly through your mouth for 8s (repeat 4 times).\n"
                 "2. **Progressive Muscle Relaxation**: Tense your feet for 5 seconds and release, then move up your legs, stomach, and shoulders to release physical tightness.\n"
