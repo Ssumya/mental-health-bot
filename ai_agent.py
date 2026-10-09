@@ -131,7 +131,7 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
     is_yoga = bool(re.search(r'\b(yoga|stretch|stretching|pose|asana|workout|pranayama|flexibility)\b', msg_lower))
     is_greeting = bool(re.search(r'\b(hi|hello|hey|namaste|greetings|kaise ho|kya haal|good morning|good evening|sup)\b', msg_lower))
     is_breathing = bool(re.search(r'\b(breath|breathing|respirat|saans|inhale|exhale)\b', msg_lower))
-    is_sleep = bool(re.search(r'\b(sleep|insomnia|neend|tired|night|so nahi|bedtime)\b', msg_lower))
+    is_sleep = bool(re.search(r'\b(sleep|sleeping|insomnia|neend|tired|night|so nahi|bedtime|awake|hours|cant sleep|can\'t sleep|jaag|der se|raat)\b', msg_lower)) or bool(re.search(r'\b(from|for) \d+ (hour|hrs|hours)\b', msg_lower))
     is_overthinking = bool(re.search(r'\b(overthink|thinking|soch|brain|mind won\'t|dimag|thoughts)\b', msg_lower))
     is_stress = bool(re.search(r'\b(stress|work|exam|job|tension|pressure|busy|burnout)\b', msg_lower))
     is_lonely = bool(re.search(r'\b(lonely|alone|akele|breakup|relationship|no one|nobody|friend)\b', msg_lower))
@@ -302,23 +302,23 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
     elif is_sleep:
         if is_hindi:
             return (
-                "Neend na aana sach mein exhausting hota hai 💙\n\n"
-                "Raat ko active dimaag melatonin secretion block kar deta hai. Phone blue-light cortisol increase karti hai.\n\n"
-                "Try this simple wind-down routine:\n"
-                "• Phone ko 1 meter door rakho aur lights dim kar do.\n"
-                "• **4-7-8 Breathing**: 4s inhale, 7s hold, 8s exhale (4 cycles).\n"
-                "• Mind ko relax karne ke liye soft rain sounds suno.\n\n"
-                "Kya aap bohot der se awake hain?"
+                "Bohot der se jaag rahe hain! Aap bohot tired feel kar rahe honge 💙 Raat ko neend na aana aur dimaag chalte rehna bohot exhausting hota hai.\n\n"
+                "Jab aap bohot ghante se awake rehte hain, to dimaag hyper-arousal loop mein chala jata hai jisse sleep delay hoti hai.\n\n"
+                "Yahan 3 gentle sleeping exercises hain jo aap abhi try kar sakte hain:\n"
+                "1. **4-7-8 Sleep Breathing**: 4s inhale, 7s hold, 8s exhale (4 cycles) nervous system ko calm karne ke liye.\n"
+                "2. **Progressive Muscle Relaxation**: Pairon se shoulders tak har muscle 5 sec tense aur release karo.\n"
+                "3. **Cognitive Shuffle**: Random neutral words (jaise apple, cloud, table) soch-soch kar dimaag ko distract karo.\n\n"
+                "Kya koi specific worry, thought, ya problem aapko raat ko pareshan kar rahi hai? Mujhe batao, hum milkar solution nikalenge taaki dimaag relaxed ho jaye!"
             )
         else:
             return (
-                "Struggling to sleep is so exhausting, but you're not alone 💙\n\n"
-                "An active night brain keeps cortisol levels high and suppresses melatonin release. Screen blue-light tricks your brain into thinking it's daylight.\n\n"
-                "Here is a 3-step wind-down protocol:\n"
-                "1. Put your phone out of arm's reach and dim all room lights.\n"
-                "2. **4-7-8 Sleep Breath**: Inhale 4s, hold 7s, exhale 8s (repeat 4 times).\n"
-                "3. **Progressive Relaxation**: Softly tense and release your shoulders and legs.\n\n"
-                "How long have you been lying awake tonight?"
+                "That's so long, you must be so tired! 💙 Being awake for hours when your body needs rest is so exhausting, but I'm right here with you.\n\n"
+                "When you've been lying awake for hours, your brain can get trapped in a hyper-arousal loop where worrying about falling asleep actually keeps you awake.\n\n"
+                "Here are 3 gentle sleeping exercises to try right now:\n"
+                "1. **4-7-8 Sleep Breathing**: Inhale quietly through your nose for 4s, hold for 7s, and exhale slowly through your mouth for 8s (repeat 4 times).\n"
+                "2. **Progressive Muscle Relaxation**: Tense your feet for 5 seconds and release, then move up your legs, stomach, and shoulders to release physical tightness.\n"
+                "3. **Cognitive Shuffle**: Picture random neutral words (like 'apple', 'cloud', 'bicycle') to quiet your analytical mind.\n\n"
+                "Is there a specific thought, worry, or problem on your mind that's keeping you up tonight? Tell me, and we'll solve it together so your mind can finally rest!"
             )
 
     elif is_overthinking:
