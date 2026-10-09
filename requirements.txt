@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+PyJWT
+psycopg2-binary
+google-generativeai
+groq
+python-dotenv
+scikit-learn>=1.6.0
+joblib
+numpy
+scipy
+xgboost
+
