@@ -139,6 +139,7 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
     is_anxious = any(w in msg_lower for w in ['anxious', 'anxiety', 'panic', 'scared', 'fear', 'darr', 'nervous'])
     is_sad = any(w in msg_lower for w in ['sad', 'udas', 'depress', 'crying', 'cry', 'hopeless', 'ro'])
     is_happy = any(w in msg_lower for w in ['happy', 'good', 'great', 'fine', 'awesome', 'khush', 'thanks', 'thank'])
+    is_yoga_exercise = any(w in msg_lower for w in ['yoga', 'exercise', 'stretch', 'stretching', 'pose', 'workout', 'asana', 'pranayama'])
 
     var = len(message) % 2
 
@@ -147,6 +148,12 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
             return "Namaste! Main SafeSpace AI hoon — aapka personal mental health companion 💙 Main yahan aapki baat sunne aur aapko support karne ke liye hoon. Aap aaj kaisa feel kar rahe hain?"
         else:
             return "Hello! I'm SafeSpace AI — your personal mental health companion 💙 I'm here to listen, support, and help you navigate whatever is on your mind. How are you feeling today?"
+
+    elif is_yoga_exercise:
+        if is_hindi:
+            return "Yoga aur gentle stretching aapke nervous system ko calm karne ke liye bohot accha hai! 💙 Stress aur anxiety ke liye 'Child's Pose' (Balasana) ya 'Legs-Up-The-Wall' (Viparita Karani) 5 minute ke liye try karo — ye heart rate ko slow karta hai aur blood pressure ko lower karta hai. Kya aap koi specific body area relax karna chahte hain?"
+        else:
+            return "Yoga and gentle stretching are fantastic for soothing your mind and nervous system! 💙 For anxiety and stress relief, try Child's Pose (Balasana) or Legs-Up-The-Wall pose for 5 minutes right now — they lower your heart rate and release physical tension instantly. Would you like a step-by-step stretching or breathing guide?"
 
     elif is_sleep:
         if is_hindi:
