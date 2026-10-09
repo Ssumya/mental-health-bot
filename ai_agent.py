@@ -45,19 +45,19 @@ def _get_gemini_client():
         return None, None
 
 
-SYSTEM_PROMPT = """You are SafeSpace AI — the user's caring, trusted best friend and mental health companion. 
-You are NOT a cold medical textbook or a robotic AI. You talk like a real, supportive best friend who genuinely cares about their well-being.
+SYSTEM_PROMPT = """You are SafeSpace AI — the user's caring, trusted best friend, mental health companion, and expert Digital Library problem-solver. 
+You are NOT a cold medical textbook or a robotic AI. You talk like a real, supportive best friend who genuinely cares about their well-being AND helps them solve any life problem step-by-step with practical solutions.
 
 LANGUAGE RULES:
 - If the user writes in Hindi or Hinglish → respond naturally in Hindi (Devanagari script or Hinglish) mixed with warm English words.
-- If the user writes in English → respond in warm, friendly English.
+- If the user writes in English → respond in warm, friendly English. Never switch to Hindi if the user speaks English!
 - Always match the user's emotional tone and language style.
 
-COMPANION GUIDELINES:
+COMPANION & DIGITAL LIBRARY GUIDELINES:
 1. Warm Validation: Listen deeply and validate their feelings first (1-2 sentences). Show true best-friend empathy.
-2. Practical & Relatable Help: Offer clear, actionable guidance tailored to what they asked for (specific yoga poses like Child's Pose or Cat-Cow, 4-7-8 or Box breathing, 10-minute brain dumps, quick walks, soothing music, sleep hygiene, or study micro-steps).
-3. Best-Friend Check-in: Always close with ONE gentle, open-ended follow-up question checking in on them.
-4. Emojis & Tone: Use 1-2 warm emojis naturally (💙, 🌿, ✨, 🫂). Keep paragraphs readable (3-5 sentences max)."""
+2. Practical & Actionable Solutions (Digital Library Action Plan): Provide clear 2-3 step actionable solutions tailored to their exact problem (e.g., 5-minute micro-goals, 2-minute rule, brain dumps, 10/10/10 decision rule, 4-7-8 breathing, specific yoga poses like Child's Pose or Cat-Cow, study/career breakdown).
+3. Best-Friend Check-in: Always close with ONE gentle, open-ended follow-up question checking in on them or asking what step they'd like to try first.
+4. Emojis & Tone: Use 1-2 warm emojis naturally (💙, 🌿, ✨, 🫂, 📌). Keep paragraphs readable and well-structured."""
 
 EMERGENCY_KEYWORDS = [
     "suicide", "kill myself", "end my life", "want to die",
@@ -110,24 +110,31 @@ def _query_ollama_local(message: str, emotion: str) -> str | None:
 
 
 def _generate_fallback_response(message: str, emotion: str) -> str:
-    """Generate a high-quality, best-friend level conversational response when offline."""
+    """Generate a high-quality, best-friend level digital-library response when offline."""
+    import re
     msg_lower = message.lower().strip()
+    
+    # Strict language detection using Devanagari script or exact word boundaries for Hinglish
     hindi_chars = sum(1 for c in message if '\u0900' <= c <= '\u097f')
-    is_hindi = hindi_chars > 0 or any(w in msg_lower for w in [
-        'hai', 'hoon', 'mujhe', 'karo', 'meri', 'kya', 'bhi', 'kuch', 'lag', 'ho', 'naam', 'batao', 'kaise', 'kaisa', 'yaar', 'bhai', 'dikkat', 'chahiye'
-    ])
+    is_hindi = hindi_chars > 0 or bool(re.search(
+        r'\b(hai|hoon|mujhe|karo|meri|kya|bhi|kuch|lag|batao|kaise|kaisa|yaar|bhai|dikkat|chahiye|kaam|soch|samajh|raha|rahi|samajhna|bolo|karna|hoga|hogi|haan|nahi|nahin|thoda|apna|apni|teri|mera|mere|karoon|karu)\b', 
+        msg_lower
+    ))
 
     emo = (emotion or "").lower()
     var = len(message) % 3
 
-    import re
-    # Comprehensive Intent Detection with Word Boundaries
+    # Comprehensive Intent Detection with Regex Word Boundaries
+    is_future_planning = bool(re.search(r'\b(what (i|to) (will|can|should) do|how to|future|direction|plan|planning|goal|goals|path|career|where to start|what next|confused about|figure out|action plan|stuck|roadmap|what i do)\b', msg_lower))
+    is_procrastination = bool(re.search(r'\b(procrastinat|can\'t start|cant start|cannot start|lazy|laziness|focus|distract|delay|postpone|motivation)\b', msg_lower))
+    is_decision = bool(re.search(r'\b(can\'t decide|cant decide|confused between|which option|decision|decide|choices|paralysis)\b', msg_lower))
+    is_study_work = bool(re.search(r'\b(study|studies|exam|exams|marks|score|college|job|interview|career|workload|assignment)\b', msg_lower))
     is_yoga = bool(re.search(r'\b(yoga|stretch|stretching|pose|asana|workout|pranayama|flexibility)\b', msg_lower))
     is_greeting = bool(re.search(r'\b(hi|hello|hey|namaste|greetings|kaise ho|kya haal|good morning|good evening|sup)\b', msg_lower))
     is_breathing = bool(re.search(r'\b(breath|breathing|respirat|saans|inhale|exhale)\b', msg_lower))
     is_sleep = bool(re.search(r'\b(sleep|insomnia|neend|tired|night|so nahi|bedtime)\b', msg_lower))
     is_overthinking = bool(re.search(r'\b(overthink|thinking|soch|brain|mind won\'t|dimag|thoughts)\b', msg_lower))
-    is_stress = bool(re.search(r'\b(stress|work|exam|job|tension|pressure|busy|burnout|study)\b', msg_lower))
+    is_stress = bool(re.search(r'\b(stress|work|exam|job|tension|pressure|busy|burnout)\b', msg_lower))
     is_lonely = bool(re.search(r'\b(lonely|alone|akele|breakup|relationship|no one|nobody|friend)\b', msg_lower))
     is_angry = bool(re.search(r'\b(gussa|angry|frustrated|annoyed|mad|hate|furious)\b', msg_lower))
     is_anxious = bool(re.search(r'\b(anxious|anxiety|panic|scared|fear|darr|nervous|terrified)\b', msg_lower))
@@ -137,7 +144,73 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
     is_music_distraction = bool(re.search(r'\b(music|song|songs|distract|movie|game|fun|bored)\b', msg_lower))
     is_help_general = bool(re.search(r'\b(help|can you|what can you do|advice|suggest|guide|options)\b', msg_lower))
 
-    if is_yoga:
+    if is_future_planning:
+        if is_hindi:
+            return (
+                "Main samajh raha hoon 💙 Jab ye clear nahi hota ki *kya karna hai aur kaise karna hai*, to dimaag mein overthinking aur stress badhne lagta hai. "
+                "Chalo ise ek Digital Library Action Plan mein breakdown karte hain:\n\n"
+                "📌 Step 1: Brain Dump — Ek paper par wo saare kaam aur worries likh dalo jo dimaag mein ghoom rahe hain.\n"
+                "📌 Step 2: 5-Minute Micro-Goal — Pura pahad ek saath mat dekho. Bas 1 chota sa kaam choose karo jo 5 minute mein ho sake.\n"
+                "📌 Step 3: 2-Minute Rule — Agar koi task 2 minute se kam ka hai (jaise glass paani peena, desk clean karna), use abhi kar dalo momentum ke liye.\n\n"
+                "Aap abhi kis specific goal ya problem ke baare mein soch rahe hain? Mujhe batao, hum milkar step-by-step solution nikalenge!"
+            )
+        else:
+            return (
+                "I completely get you 💙 Feeling confused about *what to do and how to do it* is one of the biggest sources of stress and decision fatigue. "
+                "Let's break this down together using a Digital Library Action Framework:\n\n"
+                "📌 Step 1: Brain Dump — Write down every single task or goal swirling in your mind onto paper so your brain isn't carrying all 50 thoughts at once.\n"
+                "📌 Step 2: Pick 1 Micro-Action — Don't look at the whole staircase. Pick just ONE 5-minute task you can do right now.\n"
+                "📌 Step 3: Use the 2-Minute Rule — If a tiny step takes under 2 minutes, do it immediately to build quick momentum.\n\n"
+                "What is the main goal or situation you're trying to figure out right now? Tell me, and we'll break it down into simple steps together!"
+            )
+
+    elif is_procrastination:
+        if is_hindi:
+            return (
+                "Procrastination aalsi hone se nahi, balki dimaag ke overwhelm hone se hota hai 💙 Yahan aapka Digital Library Execution Plan hai:\n\n"
+                "📌 5-Minute Rule: Apne dimaag ko bolo ki bas 5 minute kaam karna hai. Iske baad stop kar sakte ho. (90% cases mein, bas start karna hi mushkil hota hai!)\n"
+                "📌 Remove Friction: Apni study table ya file open karke rakho.\n"
+                "📌 Focus Music: Soft lo-fi beats chala kar timer start karo.\n\n"
+                "Konsa kaam aap delay kar rahe hain abhi? Mujhe batao, hum pehla 60-second step saath mein lete hain!"
+            )
+        else:
+            return (
+                "Procrastination isn't about laziness — it's usually emotional overwhelm or perfectionism 💙 Here is your Digital Library Execution Plan:\n\n"
+                "📌 5-Minute Rule: Tell yourself you only have to work for 5 minutes. If you want to stop after 5 mins, you can. (Starting is usually the only hard part!)\n"
+                "📌 Reduce Friction: Open the file or project right now, but don't force yourself to finish it yet.\n"
+                "📌 Focus Music: Put on lo-fi instrumental music to quiet your background thoughts.\n\n"
+                "What specific task are you putting off right now? Let's take the first tiny step together!"
+            )
+
+    elif is_decision:
+        if is_hindi:
+            return (
+                "Decision paralysis mein aana natural hai 💙 Jab choices zyada hon to dimaag freeze ho jata hai. Ise resolve karne ke liye 10/10/10 Rule use karo:\n\n"
+                "📌 Kya ye decision 10 minute baad matter karega?\n"
+                "📌 Kya ye 10 mahine baad matter karega?\n"
+                "📌 Kya ye 10 saal baad matter karega?\n\n"
+                "Aapkin kaun se 2 options ke beech confusion ho rahi hai? Mujhe batao, hum pros and cons compare karte hain!"
+            )
+        else:
+            return (
+                "Decision paralysis happens when your brain gets overloaded by options 💙 Use the Digital Library 10/10/10 Framework to gain instant clarity:\n\n"
+                "📌 Will this decision matter in 10 minutes?\n"
+                "📌 Will it matter in 10 months?\n"
+                "📌 Will it matter in 10 years?\n\n"
+                "What choices are you deciding between right now? Tell me both options and we'll compare them together!"
+            )
+
+    elif is_study_work:
+        if is_hindi:
+            return (
+                "Study ya work overload se stress aana natural hai 💙 Best-friend advice: Pomodoro Technique try karo — 25 minute intense focus, phir 5 minute ka complete break. Isse dimaag fatigue nahi hota. Abhi kaun sa subject ya topic cover karna hai?"
+            )
+        else:
+            return (
+                "Study or work pressure can feel overwhelming 💙 Here is a proven Digital Library strategy: Try the Pomodoro Method — 25 minutes of single-task focus, followed by a strict 5-minute break. It prevents brain burnout. What subject or project are you working on right now?"
+            )
+
+    elif is_yoga:
         if is_hindi:
             if var == 0:
                 return "Yoga mind aur body dono ke liye bohot relaxing hota hai! 💙 Stress ke liye 'Child's Pose' (Balasana) 5 minute try karo — ye spine aur mind ko turant calm karta hai. Saath mein deep breathing karo. Kya aap gentle stretches pasand karte hain?"
@@ -145,7 +218,6 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
                 return "Haan bilkul! Anxiety relief ke liye 'Legs-Up-The-Wall' (Viparita Karani) pose try karo 💙 Wall ke saath taangein upar karke 5-10 mins ke liye lie down karo — ye blood pressure drop karta hai aur relaxation induce karta hai. Kya aapko koi body pain bhi ho raha hai?"
             else:
                 return "Spine tension ke liye 'Cat-Cow Pose' bohot effective hota hai! 💙 10 cycles ke liye inhale pe back arch karo aur exhale pe round karo. Isse nervous system calm feel karega. Kya hum breathing session bhi combine karein?"
-
         else:
             if var == 0:
                 return "Yoga is amazing for grounding your nervous system! 💙 For quick anxiety relief, try Child's Pose (Balasana) for 5 minutes right now — fold forward on your knees and rest your forehead on the floor. It gently lowers your heart rate. Would you like a guided breathing exercise with it?"
@@ -156,9 +228,9 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
 
     elif is_greeting:
         if is_hindi:
-            return "Hey! Main SafeSpace AI hoon — aapka personal best friend 💙 Main yahan hamesha aapki baat sunne aur aapka mood accha karne ke liye hoon. Aaj aapka din kaisa raha?"
+            return "Hey! Main SafeSpace AI hoon — aapka personal best friend aur problem-solver 💙 Main yahan hamesha aapki baat sunne aur solutions dhoondhne ke liye hoon. Aaj aapka din kaisa raha?"
         else:
-            return "Hey there! I'm SafeSpace AI — your personal best friend and companion 💙 I'm right here whenever you want to talk, vent, or just relax. How is your day going so far?"
+            return "Hey there! I'm SafeSpace AI — your personal best friend and problem-solving companion 💙 I'm right here whenever you want to talk, vent, plan, or solve a challenge. How is your day going so far?"
 
     elif is_breathing:
         if is_hindi:
@@ -168,7 +240,7 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
 
     elif is_sleep:
         if is_hindi:
-            return "Neend na aana sach mein thaka deta hai 💙 Jab dimag mein vichar chal rahe hon, to phone ko 1 ghanter door rakhna aur dim lights try karo. Abhi 4-7-8 breathing try karo: 4 sec inhale, 7 sec hold, 8 sec exhale. Isse aapki body sleep mode mein aayegi. Kya aap bohot der se so nahi pa rahe?"
+            return "Neend na aana sach mein thaka deta hai 💙 Jab dimag mein vichar chal rahe hon, to phone ko door rakhna aur dim lights try karo. Abhi 4-7-8 breathing try karo: 4 sec inhale, 7 sec hold, 8 sec exhale. Isse aapki body sleep mode mein aayegi. Kya aap bohot der se so nahi pa rahe?"
         else:
             return "Struggling to sleep is so exhausting 💙 When your mind won't quiet down, try putting your phone out of arm's reach and dimming all lights. Right now, do 4-7-8 breathing: inhale 4s, hold 7s, exhale 8s. Repeat 4 times to signal your body it's safe to sleep. How long have you been lying awake?"
 
@@ -180,7 +252,7 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
 
     elif is_stress:
         if is_hindi:
-            return "Work ya study ka stress heavy ho sakta hai, par aap ise handle kar sakte hain 💙 Pehle Box Breathing try karo (4s in, 4s hold, 4s out, 4s hold). Phir apne bade task ko 5-minute micro-steps mein baanto. Kaun sa kaam abhi sabse zyada tension de raha hai?"
+            return "Stress heavy ho sakta hai, par aap ise handle kar sakte hain 💙 Pehle Box Breathing try karo (4s in, 4s hold, 4s out, 4s hold). Phir apne bade task ko 5-minute micro-steps mein baanto. Kaun sa kaam abhi sabse zyada tension de raha hai?"
         else:
             return "When stress builds up, it's your brain asking for a brief pause 💙 First, take 3 Box Breaths (4s in, 4s hold, 4s out, 4s hold). Next, break your big task into 5-minute micro-steps. What is currently causing the biggest pressure?"
 
@@ -222,9 +294,9 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
 
     elif is_help_general:
         if is_hindi:
-            return "Main aapka mental health companion hoon 💙 Main aapko yoga poses, breathing exercises, stress management tips, overthinking relief, aur daily motivation mein guide kar sakta hoon. Aapko kis cheez mein help chahiye?"
+            return "Main aapka best friend aur Digital Library problem-solver hoon 💙 Main aapko yoga, breathing, action plans, procrastination relief, study tips, aur stress management mein guide kar sakta hoon. Aapko kis cheez mein help chahiye?"
         else:
-            return "I'm here as your dedicated companion 💙 I can guide you with tailored yoga poses, breathing exercises, stress management, overthinking relief, sleep tips, or just be here to listen whenever you want to vent. What would help you most right now?"
+            return "I'm here as your best friend and Digital Library problem solver 💙 I can guide you with tailored yoga poses, breathing exercises, step-by-step action plans, procrastination tips, study advice, or sleep support. What would help you most right now?"
 
     elif is_happy:
         if is_hindi:
@@ -234,19 +306,18 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
 
     else:
         if is_hindi:
-            if var == 0:
-                return "Main poori tarah aapki baat sun raha/rahi hoon 💙 Jo bhi aap feel kar rahe hain use express karna bohot accha step hai. Ek gehri saans lo (4s in, 4s hold, 4s out) aur thoda relaxed feel karo. Aap is baare mein thoda aur batana chahenge?"
-            elif var == 1:
-                return "Main hamesha aapke saath hoon 💙 SafeSpace par aap apni har baat bina kisi hesitation ke bol sakte hain. Aap abhi kya soch rahe hain?"
-            else:
-                return "Main aapki feeling samajhne ki koshish kar raha/rahi hoon 💙 Aap jo bhi experience kar rahe hain wo valid hai. Kya hum milkar iska solution dhoondhein?"
+            return (
+                "Main aapka personal best friend aur Digital Library problem solver hoon 💙 "
+                "Aap jo bhi challenge ya feeling experience kar rahe hain, hum milkar step-by-step solution nikalenge. "
+                "Mujhe thoda aur batao ki abhi kya chal raha hai — stress, daily planning, neend, focus, ya koi decision?"
+            )
         else:
-            if var == 0:
-                return "I hear you 💙 Expressing whatever is on your mind is already a great step forward. Take a slow, deep breath right now: inhale for 4s, hold for 4s, exhale for 4s. Would you like to tell me more about what's going on?"
-            elif var == 1:
-                return "I'm right here listening 💙 SafeSpace is a safe, judgment-free space for you to share whatever you're going through. What's been on your mind lately?"
-            else:
-                return "I'm here for you no matter what 💙 Whatever you're experiencing is completely valid. Would you like to talk it through together?"
+            return (
+                "I'm right here with you as your best friend and Digital Library problem solver 💙 "
+                "Whatever challenge or goal you're facing, we can break it down step-by-step together. "
+                "Tell me a bit more about what's going on or what you'd like guidance on — whether it's stress, action planning, sleep, focus, or making a decision!"
+            )
+
 
 
 def get_response(message: str) -> tuple[str, str]:
