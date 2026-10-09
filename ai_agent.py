@@ -98,7 +98,7 @@ def _query_ollama_local(message: str, emotion: str) -> str | None:
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=3) as resp:
+        with urllib.request.urlopen(req, timeout=0.3) as resp:
             if resp.status == 200:
                 result = json.loads(resp.read().decode("utf-8"))
                 content = result.get("message", {}).get("content", "").strip()
@@ -592,10 +592,10 @@ def get_response(message: str) -> tuple[str, str]:
 
     emotion = predict_emotion(message)
 
-    # Tier 1. Try Groq Cloud if available
+    # Tier 1. Try Groq Cloud if available (ultra-fast sub-second LLM)
     groq_client = _get_groq_client()
     if groq_client:
-        for groq_model in ["llama-3.3-70b-versatile", "llama3-8b-8192", "gemma2-9b-it", "mixtral-8x7b-32768", "llama-3.1-8b-instant"]:
+        for groq_model in ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "llama3-8b-8192", "gemma2-9b-it"]:
             try:
                 response = groq_client.chat.completions.create(
                     model=groq_model,
@@ -606,8 +606,9 @@ def get_response(message: str) -> tuple[str, str]:
                             "content": f"Predicted emotion signal: {emotion}\nUser message: {message}"
                         }
                     ],
-                    max_tokens=350,
+                    max_tokens=300,
                     temperature=0.7,
+                    timeout=4.0,
                     stream=False
                 )
                 if response and response.choices and response.choices[0].message.content:
@@ -618,7 +619,7 @@ def get_response(message: str) -> tuple[str, str]:
     # Tier 2. Try Gemini Cloud if available
     gemini_client, gemini_legacy_mod = _get_gemini_client()
     if gemini_client:
-        for g_model in ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash']:
+        for g_model in ['gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']:
             try:
                 prompt = f"{SYSTEM_PROMPT}\n\nPredicted emotion signal: {emotion}\nUser message: {message}"
                 res = gemini_client.models.generate_content(
