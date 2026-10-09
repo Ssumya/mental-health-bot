@@ -266,18 +266,22 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 .mav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:700;flex-shrink:0;margin-top:3px}
 .mav.ai{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;box-shadow:var(--clay-shadow-sm)}
 .mav.usr{background:var(--clay-bg);color:var(--text2);box-shadow:var(--clay-shadow-sm)}
-.mbody{flex:1;min-width:0}
+.mbody{flex:1;min-width:0;display:flex;flex-direction:column}
+.mrow.usr .mbody{align-items:flex-end}
+.mrow.ai .mbody{align-items:flex-start}
 .mname{font-size:.71rem;color:var(--text3);margin-bottom:.25rem;font-weight:600}
 .mrow.usr .mname{text-align:right}
-.mbub{font-size:.9rem;line-height:1.72;color:var(--navy)}
-.mrow.usr .mbub{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-radius:18px 4px 18px 18px;padding:.68rem 1.05rem;display:inline-block;float:right;clear:both;max-width:88%;box-shadow:4px 4px 12px rgba(15,32,68,0.2),-2px -2px 8px rgba(255,255,255,0.6)}
-.mrow.ai .mbub{background:var(--clay-card);border-radius:4px 18px 18px 18px;padding:.68rem 1.05rem;display:inline-block;float:left;clear:both;max-width:92%;box-shadow:var(--clay-shadow-sm)}
+.mbub{font-size:.9rem;line-height:1.72;color:var(--navy);word-break:break-word}
+.mrow.usr .mbub{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-radius:18px 4px 18px 18px;padding:.68rem 1.05rem;max-width:88%;box-shadow:4px 4px 12px rgba(15,32,68,0.2),-2px -2px 8px rgba(255,255,255,0.6)}
+.mrow.ai .mbub{background:var(--clay-card);border-radius:4px 18px 18px 18px;padding:.68rem 1.05rem;max-width:92%;box-shadow:var(--clay-shadow-sm)}
 .mtime{font-size:.65rem;color:var(--text4);margin-top:.28rem}
 .mrow.usr .mtime{text-align:right}
 .trow{display:flex;gap:.75rem;align-items:center;padding:.4rem 1.35rem;max-width:780px;margin:0 auto;width:100%}
 .tdots{display:flex;gap:4px}
-.tdots span{width:5px;height:5px;border-radius:50%;background:var(--baby);animation:td 1.4s infinite}
-.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
+.tdots span{width:6px;height:6px;border-radius:50%;background:var(--navy3);animation:td 1.4s infinite ease-in-out}
+.tdots span:nth-child(2){animation-delay:.2s}
+.tdots span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-5px);opacity:1}}
 .ebar{background:var(--danger-pale);border-top:2px solid rgba(229,57,53,.2);padding:.6rem 1.35rem;font-size:.8rem;color:var(--danger);display:none;flex-shrink:0}
 .vbar{background:var(--baby4);border-top:1px solid rgba(137,196,244,.3);padding:.5rem 1.35rem;font-size:.79rem;color:var(--text2);display:none;flex-shrink:0;align-items:center;justify-content:space-between}
 .vbar-btn{padding:.32rem .85rem;background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border:none;border-radius:20px;font-family:var(--font);font-size:.76rem;font-weight:600;cursor:pointer;box-shadow:var(--clay-shadow-sm)}
@@ -633,6 +637,9 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
 
     <!-- Main -->
     <div class="d-main">
+      <div id="wakeup-banner" style="display:none; background:#fff3cd; color:#856404; padding:10px 16px; font-weight:500; font-size:0.82rem; text-align:center; border-bottom:1px solid #ffeeba; flex-shrink:0;">
+        ⏳ <strong>Server Waking Up:</strong> Render free tier is booting up (~30-45s). Please wait a moment...
+      </div>
       <div class="d-hdr">
         <div class="d-hdr-dot"></div>
         <div class="d-hdr-title" id="htitle">SafeSpace AI · Mental Health Companion</div>
@@ -729,8 +736,35 @@ setTimeout(()=>{
   },2000);
 },1500);
 
+async function checkServerHealth() {
+  const b = document.getElementById('wakeup-banner');
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => { if(b) b.style.display = 'block'; }, 1500);
+    const res = await fetch(`${API}/health`, { signal: controller.signal });
+    clearTimeout(timer);
+    if(res.ok) {
+      if(b) b.style.display = 'none';
+      return true;
+    }
+  } catch(e) {
+    if(b) b.style.display = 'block';
+  }
+  const poll = setInterval(async () => {
+    try {
+      const res = await fetch(`${API}/health`);
+      if(res.ok) {
+        clearInterval(poll);
+        if(b) b.style.display = 'none';
+        showT('Server connected & ready! 🌿');
+      }
+    } catch(e) {}
+  }, 3000);
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   renderEx();
+  checkServerHealth();
   if(token&&me){showApp();init()}
 });
 
