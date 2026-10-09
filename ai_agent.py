@@ -39,10 +39,11 @@ def _get_gemini_client():
     try:
         genai_legacy = importlib.import_module("google.generativeai")
         genai_legacy.configure(api_key=GEMINI_API_KEY)
-        return None, genai_legacy.GenerativeModel("gemini-1.5-flash")
+        return None, genai_legacy
     except Exception as e:
         print(f"[AI Agent] Gemini init warning: {e}")
         return None, None
+
 
 
 SYSTEM_PROMPT = """You are SafeSpace AI — the user's caring, trusted best friend, mental health companion, and ChatGPT-level Digital Library problem solver.
@@ -585,45 +586,51 @@ def get_response(message: str) -> tuple[str, str]:
     # Tier 1. Try Groq Cloud if available
     groq_client = _get_groq_client()
     if groq_client:
-        try:
-            response = groq_client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Predicted emotion signal: {emotion}\nUser message: {message}"
-                    }
-                ],
-                max_tokens=300,
-                temperature=0.8,
-                stream=False
-            )
-            return response.choices[0].message.content.strip(), "None"
-        except Exception as e:
-            print(f"[AI Agent] Groq error: {e}")
+        for groq_model in ["llama-3.3-70b-versatile", "llama3-8b-8192", "gemma2-9b-it", "mixtral-8x7b-32768", "llama-3.1-8b-instant"]:
+            try:
+                response = groq_client.chat.completions.create(
+                    model=groq_model,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {
+                            "role": "user",
+                            "content": f"Predicted emotion signal: {emotion}\nUser message: {message}"
+                        }
+                    ],
+                    max_tokens=350,
+                    temperature=0.7,
+                    stream=False
+                )
+                if response and response.choices and response.choices[0].message.content:
+                    return response.choices[0].message.content.strip(), "None"
+            except Exception as e:
+                print(f"[AI Agent] Groq model '{groq_model}' notice: {e}")
 
     # Tier 2. Try Gemini Cloud if available
-    gemini_client, gemini_legacy_model = _get_gemini_client()
+    gemini_client, gemini_legacy_mod = _get_gemini_client()
     if gemini_client:
-        try:
-            prompt = f"{SYSTEM_PROMPT}\n\nPredicted emotion signal: {emotion}\nUser message: {message}"
-            res = gemini_client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt
-            )
-            if res and res.text:
-                return res.text.strip(), "None"
-        except Exception as e:
-            print(f"[AI Agent] Gemini error: {e}")
-    elif gemini_legacy_model:
-        try:
-            prompt = f"{SYSTEM_PROMPT}\n\nPredicted emotion signal: {emotion}\nUser message: {message}"
-            res = gemini_legacy_model.generate_content(prompt)
-            if res and res.text:
-                return res.text.strip(), "None"
-        except Exception as e:
-            print(f"[AI Agent] Gemini Legacy error: {e}")
+        for g_model in ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash']:
+            try:
+                prompt = f"{SYSTEM_PROMPT}\n\nPredicted emotion signal: {emotion}\nUser message: {message}"
+                res = gemini_client.models.generate_content(
+                    model=g_model,
+                    contents=prompt
+                )
+                if res and res.text:
+                    return res.text.strip(), "None"
+            except Exception as e:
+                print(f"[AI Agent] Gemini model '{g_model}' notice: {e}")
+    elif gemini_legacy_mod:
+        for legacy_model_name in ["gemini-1.5-flash-latest", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"]:
+            try:
+                g_model = gemini_legacy_mod.GenerativeModel(legacy_model_name)
+                prompt = f"{SYSTEM_PROMPT}\n\nPredicted emotion signal: {emotion}\nUser message: {message}"
+                res = g_model.generate_content(prompt)
+                if res and res.text:
+                    return res.text.strip(), "None"
+            except Exception as e:
+                print(f"[AI Agent] Gemini Legacy model '{legacy_model_name}' notice: {e}")
+
 
     # Tier 3. Try Local Ollama LLM (e.g., MedGemma / Llama 3) if running locally
     ollama_res = _query_ollama_local(message, emotion)
