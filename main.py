@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn, os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from ai_agent import get_response, SYSTEM_PROMPT
 from auth import login, register, get_current_user
