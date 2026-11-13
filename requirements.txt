@@ -9,6 +9,3 @@ python-dotenv
 scikit-learn>=1.6.0
 joblib
 numpy
-scipy
-xgboost
-
