@@ -9,8 +9,66 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat").strip()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "alibayram/medgemma:4b").strip()
+
+
+def _query_openrouter(messages: list[dict]) -> str | None:
+    """Query OpenRouter API (DeepSeek V3, Llama 3.3, Gemini) if API key is provided."""
+    if not OPENROUTER_API_KEY:
+        return None
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    for model in ["deepseek/deepseek-chat:free", "meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.0-flash-exp:free"]:
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps({"model": model, "messages": messages, "max_tokens": 500, "temperature": 0.7}).encode("utf-8"),
+                headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json", "User-Agent": "SafeSpace-AI"}
+            )
+            with urllib.request.urlopen(req, timeout=8.0) as resp:
+                if resp.status == 200:
+                    d = json.loads(resp.read().decode("utf-8"))
+                    content = d.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                    if content:
+                        return content
+        except Exception:
+            continue
+    return None
+
+
+def _stream_openrouter(messages: list[dict]):
+    """Stream from OpenRouter API yielding string chunks."""
+    if not OPENROUTER_API_KEY:
+        return
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    for model in ["deepseek/deepseek-chat:free", "meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.0-flash-exp:free"]:
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps({"model": model, "messages": messages, "max_tokens": 500, "temperature": 0.7, "stream": True}).encode("utf-8"),
+                headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json", "User-Agent": "SafeSpace-AI"}
+            )
+            resp = urllib.request.urlopen(req, timeout=8.0)
+            has_yielded = False
+            for raw_line in resp:
+                line = raw_line.decode("utf-8").strip()
+                if line.startswith("data: "):
+                    chunk_str = line[6:]
+                    if chunk_str == "[DONE]":
+                        break
+                    try:
+                        chunk_json = json.loads(chunk_str)
+                        delta = chunk_json.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                        if delta:
+                            has_yielded = True
+                            yield delta
+                    except Exception:
+                        pass
+            if has_yielded:
+                return
+        except Exception:
+            continue
 
 
 def _get_groq_client():
@@ -653,7 +711,14 @@ def get_response(message: str, history: list[dict] = None) -> tuple[str, str]:
             except Exception:
                 pass
 
-    # Tier 2. Try Gemini Cloud if available
+    # Tier 2. Try OpenRouter Cloud (DeepSeek V3 / Llama 3.3 Free)
+    if OPENROUTER_API_KEY:
+        router_messages = _build_groq_messages(message, emotion, history)
+        router_res = _query_openrouter(router_messages)
+        if router_res:
+            return router_res, "None"
+
+    # Tier 3. Try Gemini Cloud if available
     gemini_client, gemini_legacy_mod = _get_gemini_client()
     gemini_prompt = _build_gemini_prompt(message, emotion, history)
 
@@ -736,7 +801,19 @@ def stream_response(message: str, history: list[dict] = None):
             except Exception:
                 pass
 
-    # Tier 2. Gemini Streaming
+    # Tier 2. OpenRouter Streaming (DeepSeek V3 / Llama 3.3 Free)
+    if OPENROUTER_API_KEY:
+        router_messages = _build_groq_messages(message, emotion, history)
+        yielded_any = False
+        for chunk in _stream_openrouter(router_messages):
+            if chunk:
+                yielded_any = True
+                yield {"chunk": chunk, "tool_called": "None", "done": False}
+        if yielded_any:
+            yield {"chunk": "", "tool_called": "None", "done": True}
+            return
+
+    # Tier 3. Gemini Streaming
     gemini_client, gemini_legacy_mod = _get_gemini_client()
     gemini_prompt = _build_gemini_prompt(message, emotion, history)
 
