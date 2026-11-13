@@ -3,6 +3,11 @@ import os
 import sys
 import datetime
 import threading
+try:
+    from config import OLLAMA_URL, OLLAMA_MODEL
+except Exception:
+    OLLAMA_URL = "http://localhost:11434/api/chat"
+    OLLAMA_MODEL = "alibayram/medgemma:4b"
 
 EMERGENCY_LOG = "emergency_log.txt"
 
@@ -52,7 +57,7 @@ def query_medgemma(prompt: str) -> str:
             import json
             import urllib.request
             data = {
-                "model": "alibayram/medgemma:4b",
+                "model": OLLAMA_MODEL,
                 "messages": [
                     {"role": "system", "content": "You are Dr. Emily Hartman, a warm and experienced clinical psychologist."},
                     {"role": "user", "content": prompt}
@@ -60,7 +65,7 @@ def query_medgemma(prompt: str) -> str:
                 "stream": False
             }
             req = urllib.request.Request(
-                "http://localhost:11434/api/chat",
+                OLLAMA_URL,
                 data=json.dumps(data).encode("utf-8"),
                 headers={"Content-Type": "application/json"},
                 method="POST"
