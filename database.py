@@ -1,5 +1,5 @@
 """
-database.py · Supabase (PostgreSQL) & SQLite backend
+database.py · Supabase (PostgreSQL) & SQLite backend for SafeSpace AI
 Tables:
   - users        : { id, username, email, password_hash, created_at }
   - chat_sessions: { id, user_id, title, created_at }
@@ -22,7 +22,6 @@ if DATABASE_URL:
     try:
         import psycopg2
         import psycopg2.extras
-        # Quick test connection
         conn = psycopg2.connect(DATABASE_URL, sslmode="require", connect_timeout=5)
         conn.close()
         USE_POSTGRES = True
@@ -72,7 +71,7 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_sessions (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id),
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 title TEXT NOT NULL DEFAULT 'New Chat',
                 created_at TIMESTAMPTZ DEFAULT NOW()
             )
@@ -80,8 +79,8 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_history (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id),
-                session_id INTEGER REFERENCES chat_sessions(id),
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
                 role TEXT NOT NULL,
                 message TEXT NOT NULL,
                 tool_called TEXT DEFAULT 'None',
@@ -94,7 +93,7 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS mood_logs (
                 id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id),
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 mood TEXT NOT NULL,
                 score INTEGER NOT NULL,
                 note TEXT DEFAULT '',
@@ -102,6 +101,8 @@ def init_db():
             )
         """)
     else:
+        # SQLite
+        cur.execute("PRAGMA foreign_keys = ON;")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,7 +115,7 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_sessions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL REFERENCES users(id),
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 title TEXT NOT NULL DEFAULT 'New Chat',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -122,8 +123,8 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL REFERENCES users(id),
-                session_id INTEGER REFERENCES chat_sessions(id),
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
                 role TEXT NOT NULL,
                 message TEXT NOT NULL,
                 tool_called TEXT DEFAULT 'None',
@@ -139,7 +140,7 @@ def init_db():
         cur.execute("""
             CREATE TABLE IF NOT EXISTS mood_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL REFERENCES users(id),
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 mood TEXT NOT NULL,
                 score INTEGER NOT NULL,
                 note TEXT DEFAULT '',
@@ -153,45 +154,59 @@ def init_db():
     print("[DB] Tables ensured successfully.")
 
 
+SALT_CONST = "mental_health_bot_salt_2024"
+
 def hash_password(password: str) -> str:
-    salt = "mental_health_bot_salt_2024"
-    return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
+    """Secure password hashing using PBKDF2-HMAC-SHA256 with 100,000 iterations."""
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), SALT_CONST.encode("utf-8"), 100000)
+    return f"pbkdf2${dk.hex()}"
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Check against PBKDF2 or legacy SHA-256 for backward compatibility."""
+    if not hashed:
+        return False
+    if hashed.startswith("pbkdf2$"):
+        expected = hash_password(password)
+        return hashed == expected
+    # Legacy SHA-256 fallback
+    legacy_hash = hashlib.sha256(f"{SALT_CONST}{password}".encode()).hexdigest()
+    return hashed == legacy_hash
 
 
 # ── User operations ───────────────────────────────────────────────────────────
 def create_user(username: str, email: str, password: str) -> dict:
-    """Insert a new user. Returns user dict or raises ValueError on duplicate."""
     conn = get_conn()
+    cur = conn.cursor()
     username_clean = username.strip()
     email_clean = email.strip().lower()
     pw_hash = hash_password(password)
 
     if USE_POSTGRES:
-        import psycopg2
-        import psycopg2.extras
-        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
+            import psycopg2.extras
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             cur.execute(
                 """INSERT INTO users (username, email, password_hash)
-                   VALUES (%s, %s, %s) RETURNING id, username, email""",
+                   VALUES (%s, %s, %s)
+                   RETURNING id, username, email""",
                 (username_clean, email_clean, pw_hash)
             )
-            row = cur.fetchone()
+            user = cur.fetchone()
             conn.commit()
-            return {"id": str(row["id"]), "username": row["username"], "email": row["email"]}
-        except psycopg2.errors.UniqueViolation as e:
+            return {"id": str(user["id"]), "username": user["username"], "email": user["email"]}
+        except Exception as e:
             conn.rollback()
-            msg = str(e)
+            msg = str(e).lower()
             if "username" in msg:
                 raise ValueError("Username already taken.")
             elif "email" in msg:
                 raise ValueError("Email already registered.")
-            raise ValueError("Username or email already registered.")
+            raise ValueError("Registration failed: " + str(e))
         finally:
             cur.close()
             conn.close()
     else:
-        cur = conn.cursor()
         try:
             cur.execute(
                 "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
@@ -202,7 +217,7 @@ def create_user(username: str, email: str, password: str) -> dict:
             return {"id": str(user_id), "username": username_clean, "email": email_clean}
         except sqlite3.IntegrityError as e:
             conn.rollback()
-            msg = str(e)
+            msg = str(e).lower()
             if "username" in msg:
                 raise ValueError("Username already taken.")
             elif "email" in msg:
@@ -214,36 +229,63 @@ def create_user(username: str, email: str, password: str) -> dict:
 
 
 def authenticate_user(username: str, password: str) -> dict | None:
-    """Verify credentials. Returns user dict on success, None on failure."""
+    """Verify credentials and upgrade legacy SHA256 hashes if detected."""
     conn = get_conn()
     username_clean = username.strip()
-    pw_hash = hash_password(password)
 
     if USE_POSTGRES:
         import psycopg2.extras
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(
-            """SELECT id, username, email FROM users
-               WHERE username = %s AND password_hash = %s""",
-            (username_clean, pw_hash)
+            "SELECT id, username, email, password_hash FROM users WHERE LOWER(username) = LOWER(%s)",
+            (username_clean,)
         )
         row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return None
+
+        if verify_password(password, row["password_hash"]):
+            # Upgrade legacy hash to PBKDF2 if needed
+            if not row["password_hash"].startswith("pbkdf2$"):
+                new_hash = hash_password(password)
+                cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, row["id"]))
+                conn.commit()
+            user_dict = {"id": str(row["id"]), "username": row["username"], "email": row["email"]}
+            cur.close()
+            conn.close()
+            return user_dict
         cur.close()
         conn.close()
-        if row:
-            return {"id": str(row["id"]), "username": row["username"], "email": row["email"]}
         return None
     else:
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, username, email FROM users WHERE username = ? AND password_hash = ?",
-            (username_clean, pw_hash)
+            "SELECT id, username, email, password_hash FROM users WHERE LOWER(username) = LOWER(?)",
+            (username_clean,)
         )
         row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return None
+
+        pw_hash = row["password_hash"] if isinstance(row, sqlite3.Row) else row[3]
+        uid = row["id"] if isinstance(row, sqlite3.Row) else row[0]
+        unm = row["username"] if isinstance(row, sqlite3.Row) else row[1]
+        uem = row["email"] if isinstance(row, sqlite3.Row) else row[2]
+
+        if verify_password(password, pw_hash):
+            if not pw_hash.startswith("pbkdf2$"):
+                new_hash = hash_password(password)
+                cur.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, uid))
+                conn.commit()
+            cur.close()
+            conn.close()
+            return {"id": str(uid), "username": unm, "email": uem}
         cur.close()
         conn.close()
-        if row:
-            return {"id": str(row["id"]), "username": row["username"], "email": row["email"]}
         return None
 
 
@@ -314,6 +356,53 @@ def get_user_history(user_id: str, limit: int = 100) -> list[dict]:
     ]
 
 
+def get_recent_session_history(session_id: str, user_id: str, limit: int = 10) -> list[dict]:
+    """Return the last N messages in the session formatted for LLM conversation context."""
+    if not session_id:
+        return []
+    conn = get_conn()
+    s_id = int(session_id)
+    u_id = int(user_id)
+
+    if USE_POSTGRES:
+        import psycopg2.extras
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(
+            """SELECT role, message
+               FROM chat_history
+               WHERE session_id = %s AND user_id = %s
+               ORDER BY timestamp DESC
+               LIMIT %s""",
+            (s_id, u_id, limit)
+        )
+        rows = list(cur.fetchall())
+        cur.close()
+        conn.close()
+    else:
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT role, message
+               FROM chat_history
+               WHERE session_id = ? AND user_id = ?
+               ORDER BY timestamp DESC
+               LIMIT ?""",
+            (s_id, u_id, limit)
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+        cur.close()
+        conn.close()
+
+    rows.reverse()
+    # Normalize role for LLMs ("user" and "assistant" or "model")
+    return [
+        {
+            "role": "user" if r["role"] == "user" else "assistant",
+            "content": r["message"]
+        }
+        for r in rows
+    ]
+
+
 # ── Mood operations ───────────────────────────────────────────────────────────
 def save_mood(user_id: str, mood: str, score: int, note: str = "") -> dict:
     """Save a mood log entry."""
@@ -360,7 +449,7 @@ def save_mood(user_id: str, mood: str, score: int, note: str = "") -> dict:
         }
 
 
-def get_mood_history(user_id: str, limit: int = 30) -> list[dict]:
+def get_mood_history(user_id: str, limit: int = 50) -> list[dict]:
     """Return recent mood logs for a user."""
     conn = get_conn()
     u_id = int(user_id)
@@ -369,7 +458,7 @@ def get_mood_history(user_id: str, limit: int = 30) -> list[dict]:
         import psycopg2.extras
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute(
-            """SELECT mood, score, note, timestamp
+            """SELECT id, mood, score, note, timestamp
                FROM mood_logs
                WHERE user_id = %s
                ORDER BY timestamp DESC
@@ -382,7 +471,7 @@ def get_mood_history(user_id: str, limit: int = 30) -> list[dict]:
     else:
         cur = conn.cursor()
         cur.execute(
-            """SELECT mood, score, note, timestamp
+            """SELECT id, mood, score, note, timestamp
                FROM mood_logs
                WHERE user_id = ?
                ORDER BY timestamp DESC
@@ -395,6 +484,7 @@ def get_mood_history(user_id: str, limit: int = 30) -> list[dict]:
 
     return [
         {
+            "id":        r["id"],
             "mood":      r["mood"],
             "score":     r["score"],
             "note":      r["note"],
@@ -402,6 +492,70 @@ def get_mood_history(user_id: str, limit: int = 30) -> list[dict]:
         }
         for r in rows
     ]
+
+
+def delete_mood_entry(mood_id: int, user_id: str) -> bool:
+    """Delete a single mood entry."""
+    conn = get_conn()
+    cur = conn.cursor()
+    u_id = int(user_id)
+
+    if USE_POSTGRES:
+        cur.execute("DELETE FROM mood_logs WHERE id = %s AND user_id = %s", (mood_id, u_id))
+    else:
+        cur.execute("DELETE FROM mood_logs WHERE id = ? AND user_id = ?", (mood_id, u_id))
+    deleted = cur.rowcount > 0
+    conn.commit()
+    cur.close()
+    conn.close()
+    return deleted
+
+
+def get_mood_stats(user_id: str) -> dict:
+    """Compute mood streak, average score, and mood distribution."""
+    logs = get_mood_history(user_id, limit=100)
+    if not logs:
+        return {
+            "total_logs": 0,
+            "average_score": 0.0,
+            "streak_days": 0,
+            "distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        }
+
+    total = len(logs)
+    avg_score = round(sum(l["score"] for l in logs) / total, 1)
+    dist = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for l in logs:
+        score = l.get("score", 3)
+        if score in dist:
+            dist[score] += 1
+
+    # Calculate streak (consecutive calendar days with a mood log)
+    log_dates = set()
+    for l in logs:
+        try:
+            dt = datetime.datetime.fromisoformat(l["timestamp"].replace("Z", "+00:00")).date()
+            log_dates.add(dt)
+        except Exception:
+            pass
+
+    streak = 0
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+    # Check if logged today or yesterday to continue streak
+    check_date = today
+    if check_date not in log_dates:
+        check_date = today - datetime.timedelta(days=1)
+
+    while check_date in log_dates:
+        streak += 1
+        check_date -= datetime.timedelta(days=1)
+
+    return {
+        "total_logs": total,
+        "average_score": avg_score,
+        "streak_days": streak,
+        "distribution": dist
+    }
 
 
 # ── Session operations ────────────────────────────────────────────────────────
@@ -540,12 +694,12 @@ def get_session_messages(session_id: str, user_id: str) -> list[dict]:
 
 
 def update_session_title(session_id: str, user_id: str, title: str):
-    """Update session title (auto-set from first user message)."""
+    """Update session title."""
     conn = get_conn()
     cur = conn.cursor()
     s_id = int(session_id)
     u_id = int(user_id)
-    title_clean = title[:60]
+    title_clean = title.strip()[:60]
 
     if USE_POSTGRES:
         cur.execute(
@@ -560,6 +714,44 @@ def update_session_title(session_id: str, user_id: str, title: str):
     conn.commit()
     cur.close()
     conn.close()
+
+
+def delete_session(session_id: str, user_id: str) -> bool:
+    """Delete a chat session and its corresponding messages."""
+    conn = get_conn()
+    cur = conn.cursor()
+    s_id = int(session_id)
+    u_id = int(user_id)
+
+    if USE_POSTGRES:
+        cur.execute("DELETE FROM chat_history WHERE session_id = %s AND user_id = %s", (s_id, u_id))
+        cur.execute("DELETE FROM chat_sessions WHERE id = %s AND user_id = %s", (s_id, u_id))
+    else:
+        cur.execute("DELETE FROM chat_history WHERE session_id = ? AND user_id = ?", (s_id, u_id))
+        cur.execute("DELETE FROM chat_sessions WHERE id = ? AND user_id = ?", (s_id, u_id))
+    deleted = cur.rowcount > 0
+    conn.commit()
+    cur.close()
+    conn.close()
+    return deleted
+
+
+def clear_all_sessions(user_id: str) -> bool:
+    """Delete all sessions and chat messages for a user."""
+    conn = get_conn()
+    cur = conn.cursor()
+    u_id = int(user_id)
+
+    if USE_POSTGRES:
+        cur.execute("DELETE FROM chat_history WHERE user_id = %s", (u_id,))
+        cur.execute("DELETE FROM chat_sessions WHERE user_id = %s", (u_id,))
+    else:
+        cur.execute("DELETE FROM chat_history WHERE user_id = ?", (u_id,))
+        cur.execute("DELETE FROM chat_sessions WHERE user_id = ?", (u_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return True
 
 
 # ── Auto-init on import ───────────────────────────────────────────────────────
