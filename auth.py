@@ -1,20 +1,20 @@
 import jwt
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Header
 from database import authenticate_user, create_user
 
 SECRET_KEY = os.getenv("JWT_SECRET", "change-this-secret-in-production-2024")
 ALGORITHM = "HS256"
-TOKEN_EXPIRE_HOURS = 24
+TOKEN_EXPIRE_HOURS = 24 * 7  # 7-day token validity for seamless mobile/web usage
 
 
 def create_token(user_id: str, username: str) -> str:
     """Create a JWT token for a user."""
     payload = {
-        "user_id": user_id,
+        "user_id": str(user_id),
         "username": username,
-        "exp": datetime.utcnow() + timedelta(hours=TOKEN_EXPIRE_HOURS)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS)
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
