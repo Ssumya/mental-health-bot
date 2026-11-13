@@ -1,17 +1,14 @@
 import os
 import json
 import urllib.request
-from dotenv import load_dotenv
 from emotion_model import predict_emotion
-
-# Load environment variables from .env if present
-load_dotenv()
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat").strip()
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "alibayram/medgemma:4b").strip()
+from config import (
+    GROQ_API_KEY,
+    GEMINI_API_KEY,
+    OPENROUTER_API_KEY,
+    OLLAMA_URL,
+    OLLAMA_MODEL,
+)
 
 
 OPENROUTER_FREE_MODELS = [
