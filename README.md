@@ -14,7 +14,7 @@
 * Powered by Server-Sent Events (`/ask/stream`), responses stream smoothly word-by-word with instant feedback instead of long, frustrating loading pauses.
 
 ### 🎙️ 3. Voice Input & Voice Readout (Accessibility)
-* **Speech-to-Text:** Tap the 🎙️ microphone icon to speak naturally in English, Hindi, or Hinglish.
+* **Speech-to-Text:** Tap the 🎙️ microphone icon to speak naturally via voice input.
 * **Text-to-Speech:** Tap the 🔊 icon on any AI response to listen to a soothing read-aloud.
 
 ### 🎧 4. Calming Ambient Soundscapes (100% Offline)
