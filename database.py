@@ -12,8 +12,7 @@ import os
 import sqlite3
 import datetime
 from pathlib import Path
-
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+from config import DATABASE_URL
 USE_POSTGRES = False
 DB_FILE = Path(__file__).resolve().parent / "safe_space.db"
 
