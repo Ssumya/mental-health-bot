@@ -658,7 +658,7 @@ def get_response(message: str, history: list[dict] = None) -> tuple[str, str]:
     gemini_prompt = _build_gemini_prompt(message, emotion, history)
 
     if gemini_client:
-        for g_model in ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']:
+        for g_model in ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro-latest']:
             try:
                 res = gemini_client.models.generate_content(
                     model=g_model,
@@ -669,7 +669,7 @@ def get_response(message: str, history: list[dict] = None) -> tuple[str, str]:
             except Exception:
                 pass
     elif gemini_legacy_mod:
-        for legacy_model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"]:
+        for legacy_model_name in ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro-latest"]:
             try:
                 g_model = gemini_legacy_mod.GenerativeModel(legacy_model_name)
                 res = g_model.generate_content(gemini_prompt)
@@ -741,7 +741,7 @@ def stream_response(message: str, history: list[dict] = None):
     gemini_prompt = _build_gemini_prompt(message, emotion, history)
 
     if gemini_client:
-        for g_model in ['gemini-2.0-flash', 'gemini-1.5-flash']:
+        for g_model in ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro-latest']:
             try:
                 stream = gemini_client.models.generate_content_stream(
                     model=g_model,
@@ -758,7 +758,7 @@ def stream_response(message: str, history: list[dict] = None):
             except Exception:
                 pass
     elif gemini_legacy_mod:
-        for legacy_model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
+        for legacy_model_name in ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro-latest"]:
             try:
                 g_model = gemini_legacy_mod.GenerativeModel(legacy_model_name)
                 stream = g_model.generate_content(gemini_prompt, stream=True)
