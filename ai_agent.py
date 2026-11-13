@@ -46,36 +46,48 @@ def _get_gemini_client():
 
 
 
-SYSTEM_PROMPT = """You are SafeSpace AI — the user's caring, trusted best friend, mental health companion, and ChatGPT-level Digital Library problem solver.
-You combine deep psychological analysis (breaking down root causes, mindset, and cognitive patterns) with the genuine warmth, empathy, and care of a best friend.
+SYSTEM_PROMPT = """You are SafeSpace AI — a deeply compassionate, scientifically grounded AI mental health companion, supportive best friend, and digital problem solver.
+You combine cognitive psychological principles (CBT reframing, mindfulness, somatic grounding) with genuine emotional warmth and attentiveness.
 
-LANGUAGE RULES:
-- If the user writes in Hindi or Hinglish → respond naturally in Hindi (Devanagari script or Hinglish) mixed with warm English words.
-- If the user writes in English → respond in warm, friendly, clear English. NEVER switch to Hindi if the user speaks English!
+CORE PRINCIPLES:
+1. Validate & Attune First: Acknowledge the user's emotion with authentic care and empathy. Never dismiss feelings or offer superficial toxic positivity ("just stay happy!").
+2. Insightful & Relatable: Help demystify what their brain and body might be experiencing (e.g., fight-or-flight nervous arousal, cognitive overload, negativity bias, catastrophizing, decision paralysis).
+3. Actionable Micro-Steps: Offer 2-3 gentle, practical, low-friction steps or calming techniques (e.g., 5-4-3-2-1 grounding, Box Breathing, 5-minute rule, brain dump).
+4. Caring Check-in: Always close with ONE gentle, open-ended question that helps them feel heard and safe to continue.
+5. Safety: If the user expresses self-harm or suicidal thoughts, prioritize crisis de-escalation and helpline numbers with maximum warmth and urgency.
 
-TONE & FORMATTING GUIDELINES:
-1. Warm & Natural Empathy: Start naturally like a real best friend who genuinely cares about their well-being. Do NOT output robotic prompt section titles or subheadings like "Best-Friend Validation:" or "ChatGPT Analysis:".
-2. Insightful Analysis: Naturally explain what is happening in their mind (e.g., decision fatigue, cognitive overload, anxiety false alarms, perfectionism loop, emotional exhaustion) in simple, relatable terms.
-3. Actionable Digital Library Steps: Provide 2-3 clean bullet points or numbered steps for practical solutions (e.g., 5-minute micro-goals, 2-minute rule, 10-minute brain dump, Box Breathing, Child's Pose yoga).
-4. Best-Friend Check-in: Always close with ONE gentle, open-ended question checking in on them."""
+LANGUAGE ADAPTABILITY:
+- If the user communicates in Hindi or Hinglish → respond naturally in warm, comforting Hinglish/Hindi mixed with familiar words.
+- If the user communicates in English → respond in warm, fluent, compassionate English. Keep the response language matched to the user."""
 
 EMERGENCY_KEYWORDS = [
-    "suicide", "kill myself", "end my life", "want to die",
-    "self harm", "hurt myself", "no reason to live",
-    "cant go on", "can't go on", "don't want to be here",
-    "marna chahta", "marna chahti", "jaan dena", "khud ko hurt"
+    "suicide", "suicidal", "kill myself", "end my life", "want to die",
+    "self harm", "hurt myself", "cut myself", "no reason to live",
+    "cant go on", "can't go on", "don't want to be here", "better off dead",
+    "slit my wrist", "overdose", "hanging myself", "die tonight",
+    "marna chahta", "marna chahti", "jaan dena", "khud ko hurt", "marne ka man",
+    "jeena nahi chahta", "jeena nahi chahti", "zindagi khatam"
 ]
 
 EMERGENCY_RESPONSE_EN = (
-    "I'm really worried about you right now, and I'm so glad you reached out to me 💙 "
-    "Please call iCall at 9152987821 (India) or your local emergency services immediately. "
-    "You are not alone — help is available right now and your life truly matters.",
+    "🚨 **I hear how much pain you're in, and I care deeply about your life and safety.** 💙\n\n"
+    "You do not have to carry this heavy burden all alone. There are compassionate, trained professionals waiting to support you right now, free and confidential:\n\n"
+    "• **India**: Call **Tele-MANAS** at **14416** / **1800-891-4416** or **iCall** at **9152987821**\n"
+    "• **USA & Canada**: Call or text **988** (Suicide & Crisis Lifeline)\n"
+    "• **UK**: Call **111** (NHS) or **116 123** (Samaritans)\n"
+    "• **Emergency Services**: Dial **112** (India/EU) or **911** (US)\n\n"
+    "Please take one slow breath with me. Your life has immense value — please reach out to one of these services or a loved one right now.",
     "emergency_call_tool"
 )
 
 EMERGENCY_RESPONSE_HI = (
-    "Main aapke baare mein bahut chintit hoon, aur main bahut khush hoon ki aapne mujhse baat ki 💙 "
-    "Kripya abhi iCall ko call karein: 9152987821. Aap akele nahi hain — madad available hai aur aapki life bohot precious hai.",
+    "🚨 **Main aapki baat sun raha hoon, aur aapki life bohot zyada keemti hai.** 💙\n\n"
+    "Aap akele nahi hain aur aapko ye takleef akele jhelne ki zaroorat nahi hai. Kripya abhi in free helplines par call karein:\n\n"
+    "• **Tele-MANAS**: Call **14416** ya **1800-891-4416** (24/7 Govt Free Helpline)\n"
+    "• **iCall (TISS)**: Call **9152987821**\n"
+    "• **Vandrevala Foundation**: Call **+91 9999 666 555**\n"
+    "• **National Emergency**: Dial **112**\n\n"
+    "Ek lambi gehri saans lo. Madad available hai aur log aapki care karte hain. Kripya turant baat karein.",
     "emergency_call_tool"
 )
 
@@ -575,7 +587,37 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
 
 
 
-def get_response(message: str) -> tuple[str, str]:
+def _build_groq_messages(message: str, emotion: str, history: list[dict] = None) -> list[dict]:
+    msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
+    if history:
+        for turn in history[-8:]:
+            role = "user" if turn.get("role") == "user" else "assistant"
+            content = turn.get("content") or turn.get("message") or ""
+            if content.strip():
+                msgs.append({"role": role, "content": content})
+    msgs.append({
+        "role": "user",
+        "content": f"[Predicted emotion signal: {emotion}]\nUser message: {message}"
+    })
+    return msgs
+
+
+def _build_gemini_prompt(message: str, emotion: str, history: list[dict] = None) -> str:
+    convo = ""
+    if history:
+        for turn in history[-6:]:
+            speaker = "User" if turn.get("role") == "user" else "Assistant"
+            content = turn.get("content") or turn.get("message") or ""
+            if content.strip():
+                convo += f"{speaker}: {content}\n"
+    prompt = f"{SYSTEM_PROMPT}\n\n"
+    if convo:
+        prompt += f"Recent Conversation History:\n{convo}\n"
+    prompt += f"Predicted emotion signal: {emotion}\nUser: {message}\nAssistant:"
+    return prompt
+
+
+def get_response(message: str, history: list[dict] = None) -> tuple[str, str]:
     msg_lower = message.lower()
 
     # Emergency check
@@ -595,20 +637,15 @@ def get_response(message: str) -> tuple[str, str]:
     # Tier 1. Try Groq Cloud if available (ultra-fast sub-second LLM)
     groq_client = _get_groq_client()
     if groq_client:
-        for groq_model in ["llama-3.3-70b-versatile", "llama-3.2-3b-preview", "llama-3.2-1b-preview", "llama-3.2-11b-vision-preview", "deepseek-r1-distill-llama-70b", "llama3-70b-8192"]:
+        groq_messages = _build_groq_messages(message, emotion, history)
+        for groq_model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "llama3-70b-8192"]:
             try:
                 response = groq_client.chat.completions.create(
                     model=groq_model,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {
-                            "role": "user",
-                            "content": f"Predicted emotion signal: {emotion}\nUser message: {message}"
-                        }
-                    ],
-                    max_tokens=300,
+                    messages=groq_messages,
+                    max_tokens=450,
                     temperature=0.7,
-                    timeout=4.0,
+                    timeout=5.0,
                     stream=False
                 )
                 if response and response.choices and response.choices[0].message.content:
@@ -618,32 +655,30 @@ def get_response(message: str) -> tuple[str, str]:
 
     # Tier 2. Try Gemini Cloud if available
     gemini_client, gemini_legacy_mod = _get_gemini_client()
+    gemini_prompt = _build_gemini_prompt(message, emotion, history)
+
     if gemini_client:
-        for g_model in ['gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash-latest', 'gemini-1.5-flash']:
+        for g_model in ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']:
             try:
-                prompt = f"{SYSTEM_PROMPT}\n\nPredicted emotion signal: {emotion}\nUser message: {message}"
                 res = gemini_client.models.generate_content(
                     model=g_model,
-                    contents=prompt
+                    contents=gemini_prompt
                 )
                 if res and res.text:
                     return res.text.strip(), "None"
             except Exception:
                 pass
     elif gemini_legacy_mod:
-        for legacy_model_name in ["gemini-2.0-flash-exp", "gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-pro"]:
+        for legacy_model_name in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"]:
             try:
                 g_model = gemini_legacy_mod.GenerativeModel(legacy_model_name)
-                prompt = f"{SYSTEM_PROMPT}\n\nPredicted emotion signal: {emotion}\nUser message: {message}"
-                res = g_model.generate_content(prompt)
+                res = g_model.generate_content(gemini_prompt)
                 if res and res.text:
                     return res.text.strip(), "None"
             except Exception:
                 pass
 
-
-
-    # Tier 3. Try Local Ollama LLM (e.g., MedGemma / Llama 3) if running locally
+    # Tier 3. Try Local Ollama LLM if running locally
     ollama_res = _query_ollama_local(message, emotion)
     if ollama_res:
         return ollama_res, "ollama_local_llm"
@@ -651,6 +686,106 @@ def get_response(message: str) -> tuple[str, str]:
     # Tier 4. Instant Local Best-Friend Companion Engine (0ms latency, 100% offline)
     fallback = _generate_fallback_response(message, emotion)
     return fallback, "None"
+
+
+def stream_response(message: str, history: list[dict] = None):
+    """
+    Generator yielding tokens in real-time.
+    Yields: {"chunk": str, "tool_called": str, "done": bool}
+    """
+    import time
+    msg_lower = message.lower()
+
+    # Emergency check
+    if any(kw in msg_lower for kw in EMERGENCY_KEYWORDS):
+        try:
+            from tools import call_emergency
+            call_emergency()
+        except Exception:
+            pass
+        hindi_chars = sum(1 for c in message if '\u0900' <= c <= '\u097f')
+        resp_text, tool = EMERGENCY_RESPONSE_HI if (hindi_chars > 0 or any(w in msg_lower for w in ['marna', 'chahta', 'chahti', 'jaan'])) else EMERGENCY_RESPONSE_EN
+        yield {"chunk": resp_text, "tool_called": tool, "done": True}
+        return
+
+    emotion = predict_emotion(message)
+
+    # Tier 1. Groq Streaming
+    groq_client = _get_groq_client()
+    if groq_client:
+        groq_messages = _build_groq_messages(message, emotion, history)
+        for groq_model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "llama3-70b-8192"]:
+            try:
+                stream = groq_client.chat.completions.create(
+                    model=groq_model,
+                    messages=groq_messages,
+                    max_tokens=500,
+                    temperature=0.7,
+                    timeout=10.0,
+                    stream=True
+                )
+                yielded_any = False
+                for chunk in stream:
+                    delta = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else None
+                    if delta:
+                        yielded_any = True
+                        yield {"chunk": delta, "tool_called": "None", "done": False}
+                if yielded_any:
+                    yield {"chunk": "", "tool_called": "None", "done": True}
+                    return
+            except Exception:
+                pass
+
+    # Tier 2. Gemini Streaming
+    gemini_client, gemini_legacy_mod = _get_gemini_client()
+    gemini_prompt = _build_gemini_prompt(message, emotion, history)
+
+    if gemini_client:
+        for g_model in ['gemini-2.0-flash', 'gemini-1.5-flash']:
+            try:
+                stream = gemini_client.models.generate_content_stream(
+                    model=g_model,
+                    contents=gemini_prompt
+                )
+                yielded_any = False
+                for chunk in stream:
+                    if chunk.text:
+                        yielded_any = True
+                        yield {"chunk": chunk.text, "tool_called": "None", "done": False}
+                if yielded_any:
+                    yield {"chunk": "", "tool_called": "None", "done": True}
+                    return
+            except Exception:
+                pass
+    elif gemini_legacy_mod:
+        for legacy_model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
+            try:
+                g_model = gemini_legacy_mod.GenerativeModel(legacy_model_name)
+                stream = g_model.generate_content(gemini_prompt, stream=True)
+                yielded_any = False
+                for chunk in stream:
+                    if chunk.text:
+                        yielded_any = True
+                        yield {"chunk": chunk.text, "tool_called": "None", "done": False}
+                if yielded_any:
+                    yield {"chunk": "", "tool_called": "None", "done": True}
+                    return
+            except Exception:
+                pass
+
+    # Tier 3. Ollama local
+    ollama_res = _query_ollama_local(message, emotion)
+    if ollama_res:
+        yield {"chunk": ollama_res, "tool_called": "ollama_local_llm", "done": True}
+        return
+
+    # Tier 4. Fallback response streamed in word chunks for fluid typing
+    fallback = _generate_fallback_response(message, emotion)
+    words = fallback.split(" ")
+    for i, w in enumerate(words):
+        yield {"chunk": w + (" " if i < len(words) - 1 else ""), "tool_called": "None", "done": False}
+        time.sleep(0.015)
+    yield {"chunk": "", "tool_called": "None", "done": True}
 
 
 
