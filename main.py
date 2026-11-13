@@ -6,9 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse
 from pydantic import BaseModel
 import uvicorn
-from dotenv import load_dotenv
-
-load_dotenv()
+from config import PORT
 
 from ai_agent import get_response, stream_response, SYSTEM_PROMPT
 from auth import login, register, get_current_user
@@ -273,5 +271,4 @@ def serve_frontend():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT)
