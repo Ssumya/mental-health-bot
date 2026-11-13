@@ -3,8 +3,9 @@ import os
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Header
 from database import authenticate_user, create_user
+from config import JWT_SECRET
 
-SECRET_KEY = os.getenv("JWT_SECRET", "change-this-secret-in-production-2024")
+SECRET_KEY = JWT_SECRET
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 24 * 7  # 7-day token validity for seamless mobile/web usage
 
