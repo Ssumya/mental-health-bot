@@ -14,12 +14,21 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/chat").strip()
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "alibayram/medgemma:4b").strip()
 
 
+OPENROUTER_FREE_MODELS = [
+    "google/gemma-4-26b-a4b-it:free",
+    "google/gemma-4-31b-it:free",
+    "nvidia/nemotron-3.5-lightning:free",
+    "liquid/lfm-3-1.7b:free",
+    "deepseek/deepseek-chat:free",
+]
+
+
 def _query_openrouter(messages: list[dict]) -> str | None:
-    """Query OpenRouter API (DeepSeek V3, Llama 3.3, Gemini) if API key is provided."""
+    """Query OpenRouter API if API key is provided."""
     if not OPENROUTER_API_KEY:
         return None
     url = "https://openrouter.ai/api/v1/chat/completions"
-    for model in ["deepseek/deepseek-chat:free", "meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.0-flash-exp:free"]:
+    for model in OPENROUTER_FREE_MODELS:
         try:
             req = urllib.request.Request(
                 url,
@@ -42,7 +51,7 @@ def _stream_openrouter(messages: list[dict]):
     if not OPENROUTER_API_KEY:
         return
     url = "https://openrouter.ai/api/v1/chat/completions"
-    for model in ["deepseek/deepseek-chat:free", "meta-llama/llama-3.3-70b-instruct:free", "google/gemini-2.0-flash-exp:free"]:
+    for model in OPENROUTER_FREE_MODELS:
         try:
             req = urllib.request.Request(
                 url,
