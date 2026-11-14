@@ -560,6 +560,7 @@ def get_mood_stats(user_id: str) -> dict:
         return {
             "total_logs": 0,
             "average_score": 0.0,
+            "avg_score": 0.0,
             "streak_days": 0,
             "distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
         }
@@ -595,6 +596,7 @@ def get_mood_stats(user_id: str) -> dict:
     return {
         "total_logs": total,
         "average_score": avg_score,
+        "avg_score": avg_score,
         "streak_days": streak,
         "distribution": dist
     }
