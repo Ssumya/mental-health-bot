@@ -785,7 +785,7 @@ footer{padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space
           </div>
         </div>
         <div class="ebar" id="ebar">🚨 Emergency alert triggered. Help is available 24/7. Call Tele-MANAS (14416), 988, 111, or 911/112. <button style="margin-left:.5rem;padding:.2rem .6rem;border-radius:12px;background:#fff;border:none;color:var(--danger);font-weight:700;cursor:pointer" onclick="openEmergencyModal()">View Helplines</button></div>
-        <div class="vbar" id="vbar"><span>Viewing past conversation</span><button class="vbar-btn" onclick="newChat()">New chat</button></div>
+        <div class="vbar" id="vbar"><span>Continuing conversation: <strong id="vbar-title"></strong></span><button class="vbar-btn" onclick="newChat()">+ New chat</button></div>
         <div class="iarea" id="iarea">
           <div class="ibox">
             <textarea class="ci" id="ci" placeholder="Type what's on your mind or use voice…" rows="1" onkeydown="onKey(event)" oninput="rsz(this)"></textarea>
@@ -1404,6 +1404,10 @@ function ago(ts) {
 
 function newChat() {
   sid = null; viewing = false;
+  const vb = document.getElementById('vbar'); if (vb) vb.style.display = 'none';
+  const ia = document.getElementById('iarea'); if (ia) ia.style.display = '';
+  const ht = document.getElementById('htitle'); if (ht) ht.textContent = TITLES['chat'] || 'SafeSpace AI · Mental Health Companion';
+  const mt = document.getElementById('m-htitle'); if (mt) mt.textContent = '❤️ SafeSpace';
   const el = document.getElementById('msgs');
   if (el) el.innerHTML = `
     <div class="welcome-clay" id="welc">
@@ -1419,8 +1423,10 @@ function newChat() {
         <span class="wc-prompt" onclick="qs(this)">I feel stuck in life</span>
       </div>
     </div>`;
-  setIn(true); goPage('chat');
+  goPage('chat');
   document.querySelectorAll('.si, .m-si').forEach(e => e.classList.remove('on'));
+  const ci = document.getElementById('ci');
+  if (ci) { ci.placeholder = "Type what's on your mind or use voice…"; ci.focus(); }
 }
 
 function resetChat() {
@@ -1429,25 +1435,35 @@ function resetChat() {
 }
 
 function setIn(show) {
-  const ia = document.getElementById('iarea'); if (ia) ia.style.display = show ? '' : 'none';
+  const ia = document.getElementById('iarea'); if (ia) ia.style.display = '';
   const vb = document.getElementById('vbar'); if (vb) vb.style.display = show ? 'none' : 'flex';
-  viewing = !show;
+  viewing = false;
 }
 
 async function loadSess2(id, title) {
-  sid = id; viewing = true; goPage('chat'); setIn(false);
-  document.getElementById('htitle').textContent = title || 'Past chat';
-  document.getElementById('m-htitle').textContent = '🌿 ' + (title || 'Past chat');
+  sid = id; viewing = false; goPage('chat');
+  const ia = document.getElementById('iarea'); if (ia) ia.style.display = '';
+  const vb = document.getElementById('vbar');
+  const vt = document.getElementById('vbar-title');
+  if (vt) vt.textContent = title || 'Conversation';
+  if (vb) vb.style.display = 'flex';
+  const ht = document.getElementById('htitle'); if (ht) ht.textContent = title || 'SafeSpace AI';
+  const mt = document.getElementById('m-htitle'); if (mt) mt.textContent = '❤️ ' + (title || 'SafeSpace');
   try {
     const r = await fetch(`${API}/sessions/${id}/messages`, { headers: { Authorization: `Bearer ${token}` } });
     if (!r.ok) return;
     const d = await r.json();
     const el = document.getElementById('msgs'); if (!el) return;
     el.innerHTML = '';
-    if (!d.messages?.length) { el.innerHTML = '<div class="empty-s">Empty conversation</div>'; return; }
-    d.messages.forEach(m => addMsg(m.role, m.message, m.timestamp, m.tool_called));
+    if (!d.messages?.length) { 
+      el.innerHTML = '<div class="empty-s">No messages in this chat yet. Type a message below to continue!</div>'; 
+    } else {
+      d.messages.forEach(m => addMsg(m.role, m.message, m.timestamp, m.tool_called));
+    }
     el.scrollTop = el.scrollHeight;
     loadSess();
+    const ci = document.getElementById('ci');
+    if (ci) { ci.placeholder = `Continue in "${esc(title || 'this chat')}"…`; ci.focus(); }
   } catch {}
 }
 
@@ -1457,12 +1473,12 @@ function rsz(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrol
 function qs(el) { const inp = document.getElementById('ci'); if (inp) { inp.value = el.textContent; send(); } }
 
 async function send() {
-  if (viewing) return;
   const inp = document.getElementById('ci');
   const msg = inp.value.trim();
   if (!msg) return;
 
   const w = document.getElementById('welc'); if (w) w.remove();
+  const es = document.querySelector('.empty-s'); if (es) es.remove();
   inp.value = ''; inp.style.height = 'auto';
   document.getElementById('sbtn').disabled = true;
 
