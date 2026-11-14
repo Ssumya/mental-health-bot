@@ -146,14 +146,13 @@ def ask(query: ChatRequest, current_user: dict = Depends(get_current_user)):
     # Create new session if none provided
     session_id = query.session_id
     if not session_id:
-        session = create_session(user_id, "New Chat")
+        first_words = " ".join(query.message.split()[:6]) or "New Chat"
+        session = create_session(user_id, first_words)
         session_id = session["id"]
-        first_words = " ".join(query.message.split()[:6])
-        if first_words:
-            update_session_title(session_id, user_id, first_words)
-
-    # Fetch prior history for conversational context
-    history = get_recent_session_history(session_id, user_id, limit=8)
+        history = []
+    else:
+        # Fetch prior history for conversational context
+        history = get_recent_session_history(session_id, user_id, limit=8)
 
     # Save user message
     save_message(user_id, "user", query.message, session_id=session_id)
@@ -178,14 +177,13 @@ def ask_stream(query: ChatRequest, current_user: dict = Depends(get_current_user
 
     session_id = query.session_id
     if not session_id:
-        session = create_session(user_id, "New Chat")
+        first_words = " ".join(query.message.split()[:6]) or "New Chat"
+        session = create_session(user_id, first_words)
         session_id = session["id"]
-        first_words = " ".join(query.message.split()[:6])
-        if first_words:
-            update_session_title(session_id, user_id, first_words)
-
-    # Fetch prior history
-    history = get_recent_session_history(session_id, user_id, limit=8)
+        history = []
+    else:
+        # Fetch prior history
+        history = get_recent_session_history(session_id, user_id, limit=8)
 
     # Save user message
     save_message(user_id, "user", query.message, session_id=session_id)
