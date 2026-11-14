@@ -31,10 +31,53 @@ if DATABASE_URL:
 else:
     print("[DB] DATABASE_URL not set. Using SQLite local backend.")
 
+_db_pool = None
+
+def _get_pool():
+    global _db_pool
+    if _db_pool is None and USE_POSTGRES:
+        try:
+            from psycopg2 import pool
+            _db_pool = pool.ThreadedConnectionPool(minconn=1, maxconn=10, dsn=DATABASE_URL, sslmode="require")
+            print("[DB] PostgreSQL connection pool initialized (1-10 connections).")
+        except Exception as e:
+            print(f"[DB Warning] Connection pool init failed: {e}")
+            _db_pool = None
+    return _db_pool
+
+
+class PooledConnWrapper:
+    """Wrapper that returns connection to pool on close() instead of dropping TCP socket."""
+    def __init__(self, p, raw_conn):
+        self._p = p
+        self._conn = raw_conn
+        self._closed = False
+
+    def close(self):
+        if not self._closed and self._p and self._conn:
+            self._closed = True
+            try:
+                if getattr(self._conn, "closed", 0) == 0:
+                    self._p.putconn(self._conn)
+                else:
+                    self._p.putconn(self._conn, close=True)
+            except Exception:
+                pass
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
 
 def get_conn():
-    """Return a database connection (PostgreSQL or SQLite wrapper)."""
+    """Return a database connection (PostgreSQL pool or SQLite wrapper)."""
     if USE_POSTGRES:
+        p = _get_pool()
+        if p:
+            try:
+                raw_conn = p.getconn()
+                return PooledConnWrapper(p, raw_conn)
+            except Exception:
+                pass
         import psycopg2
         import psycopg2.extras
         return psycopg2.connect(DATABASE_URL, sslmode="require")
