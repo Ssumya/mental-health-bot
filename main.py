@@ -152,7 +152,7 @@ def ask(query: ChatRequest, current_user: dict = Depends(get_current_user)):
         history = []
     else:
         # Fetch prior history for conversational context
-        history = get_recent_session_history(session_id, user_id, limit=8)
+        history = get_recent_session_history(session_id, user_id, limit=12)
 
     # Save user message
     save_message(user_id, "user", query.message, session_id=session_id)
@@ -183,7 +183,7 @@ def ask_stream(query: ChatRequest, current_user: dict = Depends(get_current_user
         history = []
     else:
         # Fetch prior history
-        history = get_recent_session_history(session_id, user_id, limit=8)
+        history = get_recent_session_history(session_id, user_id, limit=12)
 
     # Save user message
     save_message(user_id, "user", query.message, session_id=session_id)
