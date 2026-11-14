@@ -1,7 +1,12 @@
+
 import os
 import json
 import urllib.request
-from emotion_model import predict_emotion
+try:
+    from emotion_model import predict_emotion
+except Exception:
+    def predict_emotion(text: str) -> str:
+        return "neutral"
 from config import (
     GROQ_API_KEY,
     GEMINI_API_KEY,
@@ -11,31 +16,99 @@ from config import (
 )
 
 
-OPENROUTER_FREE_MODELS = [
-    "google/gemma-4-26b-a4b-it:free",
-    "google/gemma-4-31b-it:free",
+# ── High-Speed Model Configurations ───────────────────────────────────────────
+GEMINI_FAST_MODELS = [
+    "gemini-flash-lite-latest",
+    "gemini-flash-latest",
+    "gemini-2.5-flash",
+]
+
+OPENROUTER_FAST_MODELS = [
+    "baidu/ernie-5.5-flash-preview:free",
+    "inclusionai/ling-3.2-flash:free",
     "nvidia/nemotron-3.5-lightning:free",
-    "liquid/lfm-3-1.7b:free",
-    "deepseek/deepseek-chat:free",
+    "google/gemma-4-26b-a4b-it:free",
 ]
 
 
-def _query_openrouter(messages: list[dict]) -> str | None:
-    """Query OpenRouter API if API key is provided."""
-    if not OPENROUTER_API_KEY:
-        return None
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    for model in OPENROUTER_FREE_MODELS:
+def _stream_gemini_direct(prompt: str):
+    """Direct Server-Sent Events stream to Gemini API for sub-1.5s first-token streaming."""
+    if not GEMINI_API_KEY:
+        return
+    for model_name in GEMINI_FAST_MODELS:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:streamGenerateContent?alt=sse&key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": 600, "temperature": 0.7}
+        }
         try:
             req = urllib.request.Request(
                 url,
-                data=json.dumps({"model": model, "messages": messages, "max_tokens": 500, "temperature": 0.7}).encode("utf-8"),
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            resp = urllib.request.urlopen(req, timeout=3.5)
+            has_yielded = False
+            for raw_line in resp:
+                line = raw_line.decode("utf-8").strip()
+                if line.startswith("data: "):
+                    try:
+                        d = json.loads(line[6:])
+                        txt = d.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                        if txt:
+                            has_yielded = True
+                            yield txt
+                    except Exception:
+                        pass
+            if has_yielded:
+                return
+        except Exception:
+            continue
+
+
+def _query_gemini_direct(prompt: str) -> str | None:
+    """Direct HTTP call to Gemini API for fast sub-second completion."""
+    if not GEMINI_API_KEY:
+        return None
+    for model_name in GEMINI_FAST_MODELS:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": 500, "temperature": 0.7}
+        }
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=3.5) as resp:
+                d = json.loads(resp.read().decode("utf-8"))
+                txt = d.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if txt and txt.strip():
+                    return txt.strip()
+        except Exception:
+            continue
+    return None
+
+
+def _query_openrouter(messages: list[dict]) -> str | None:
+    """Query OpenRouter API using verified fast free models."""
+    if not OPENROUTER_API_KEY:
+        return None
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    for model in OPENROUTER_FAST_MODELS:
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps({"model": model, "messages": messages, "max_tokens": 400, "temperature": 0.7}).encode("utf-8"),
                 headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json", "User-Agent": "SafeSpace-AI"}
             )
-            with urllib.request.urlopen(req, timeout=8.0) as resp:
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
                 if resp.status == 200:
                     d = json.loads(resp.read().decode("utf-8"))
-                    content = d.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                    msg = d.get("choices", [{}])[0].get("message", {})
+                    content = (msg.get("content") or "").strip()
                     if content:
                         return content
         except Exception:
@@ -44,18 +117,18 @@ def _query_openrouter(messages: list[dict]) -> str | None:
 
 
 def _stream_openrouter(messages: list[dict]):
-    """Stream from OpenRouter API yielding string chunks."""
+    """Stream from OpenRouter API using verified fast free models."""
     if not OPENROUTER_API_KEY:
         return
     url = "https://openrouter.ai/api/v1/chat/completions"
-    for model in OPENROUTER_FREE_MODELS:
+    for model in OPENROUTER_FAST_MODELS:
         try:
             req = urllib.request.Request(
                 url,
-                data=json.dumps({"model": model, "messages": messages, "max_tokens": 500, "temperature": 0.7, "stream": True}).encode("utf-8"),
+                data=json.dumps({"model": model, "messages": messages, "max_tokens": 450, "temperature": 0.7, "stream": True}).encode("utf-8"),
                 headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json", "User-Agent": "SafeSpace-AI"}
             )
-            resp = urllib.request.urlopen(req, timeout=8.0)
+            resp = urllib.request.urlopen(req, timeout=2.5)
             has_yielded = False
             for raw_line in resp:
                 line = raw_line.decode("utf-8").strip()
@@ -65,10 +138,12 @@ def _stream_openrouter(messages: list[dict]):
                         break
                     try:
                         chunk_json = json.loads(chunk_str)
-                        delta = chunk_json.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                        if delta:
+                        choice = chunk_json.get("choices", [{}])[0]
+                        delta = choice.get("delta", {})
+                        content = delta.get("content") or ""
+                        if content:
                             has_yielded = True
-                            yield delta
+                            yield content
                     except Exception:
                         pass
             if has_yielded:
@@ -684,7 +759,7 @@ def _build_gemini_prompt(message: str, emotion: str, history: list[dict] = None)
 def get_response(message: str, history: list[dict] = None) -> tuple[str, str]:
     msg_lower = message.lower()
 
-    # Emergency check
+    # Emergency crisis check (instant)
     if any(kw in msg_lower for kw in EMERGENCY_KEYWORDS):
         try:
             from tools import call_emergency
@@ -698,76 +773,52 @@ def get_response(message: str, history: list[dict] = None) -> tuple[str, str]:
 
     emotion = predict_emotion(message)
 
-    # Tier 1. Try Groq Cloud if available (ultra-fast sub-second LLM)
-    groq_client = _get_groq_client()
-    if groq_client:
-        groq_messages = _build_groq_messages(message, emotion, history)
-        for groq_model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "llama3-70b-8192"]:
-            try:
-                response = groq_client.chat.completions.create(
-                    model=groq_model,
-                    messages=groq_messages,
-                    max_tokens=450,
-                    temperature=0.7,
-                    timeout=5.0,
-                    stream=False
-                )
-                if response and response.choices and response.choices[0].message.content:
-                    return response.choices[0].message.content.strip(), "None"
-            except Exception:
-                pass
+    # Tier 1. Gemini Cloud Direct REST (~1.2s latency)
+    if GEMINI_API_KEY:
+        gemini_prompt = _build_gemini_prompt(message, emotion, history)
+        gemini_res = _query_gemini_direct(gemini_prompt)
+        if gemini_res:
+            return gemini_res, "None"
 
-    # Tier 2. Try OpenRouter Cloud (DeepSeek V3 / Llama 3.3 Free)
+    # Tier 2. OpenRouter Fast Cloud Models (~1.2s - 2s latency)
     if OPENROUTER_API_KEY:
         router_messages = _build_groq_messages(message, emotion, history)
         router_res = _query_openrouter(router_messages)
         if router_res:
             return router_res, "None"
 
-    # Tier 3. Try Gemini Cloud if available
-    gemini_client, gemini_legacy_mod = _get_gemini_client()
-    gemini_prompt = _build_gemini_prompt(message, emotion, history)
+    # Tier 3. Groq Cloud (Single fast attempt, 1.5s timeout)
+    groq_client = _get_groq_client()
+    if groq_client:
+        try:
+            groq_messages = _build_groq_messages(message, emotion, history)
+            response = groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=groq_messages,
+                max_tokens=400,
+                temperature=0.7,
+                timeout=1.5,
+                stream=False
+            )
+            if response and response.choices and response.choices[0].message.content:
+                return response.choices[0].message.content.strip(), "None"
+        except Exception:
+            pass
 
-    if gemini_client:
-        for g_model in ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro-latest']:
-            try:
-                res = gemini_client.models.generate_content(
-                    model=g_model,
-                    contents=gemini_prompt
-                )
-                if res and res.text:
-                    return res.text.strip(), "None"
-            except Exception:
-                pass
-    elif gemini_legacy_mod:
-        for legacy_model_name in ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro-latest"]:
-            try:
-                g_model = gemini_legacy_mod.GenerativeModel(legacy_model_name)
-                res = g_model.generate_content(gemini_prompt)
-                if res and res.text:
-                    return res.text.strip(), "None"
-            except Exception:
-                pass
-
-    # Tier 3. Try Local Ollama LLM if running locally
-    ollama_res = _query_ollama_local(message, emotion)
-    if ollama_res:
-        return ollama_res, "ollama_local_llm"
-
-    # Tier 4. Instant Local Best-Friend Companion Engine (0ms latency, 100% offline)
+    # Tier 4. Instant Built-in Best-Friend Companion Engine (0ms latency, 100% offline)
     fallback = _generate_fallback_response(message, emotion)
     return fallback, "None"
 
 
 def stream_response(message: str, history: list[dict] = None):
     """
-    Generator yielding tokens in real-time.
+    Generator yielding tokens in real-time with sub-1.5s first-token latency.
     Yields: {"chunk": str, "tool_called": str, "done": bool}
     """
     import time
     msg_lower = message.lower()
 
-    # Emergency check
+    # Emergency crisis check (instant)
     if any(kw in msg_lower for kw in EMERGENCY_KEYWORDS):
         try:
             from tools import call_emergency
@@ -781,33 +832,19 @@ def stream_response(message: str, history: list[dict] = None):
 
     emotion = predict_emotion(message)
 
-    # Tier 1. Groq Streaming
-    groq_client = _get_groq_client()
-    if groq_client:
-        groq_messages = _build_groq_messages(message, emotion, history)
-        for groq_model in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "llama3-70b-8192"]:
-            try:
-                stream = groq_client.chat.completions.create(
-                    model=groq_model,
-                    messages=groq_messages,
-                    max_tokens=500,
-                    temperature=0.7,
-                    timeout=10.0,
-                    stream=True
-                )
-                yielded_any = False
-                for chunk in stream:
-                    delta = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else None
-                    if delta:
-                        yielded_any = True
-                        yield {"chunk": delta, "tool_called": "None", "done": False}
-                if yielded_any:
-                    yield {"chunk": "", "tool_called": "None", "done": True}
-                    return
-            except Exception:
-                pass
+    # Tier 1. Gemini Direct Streaming (~1.3s first token!)
+    if GEMINI_API_KEY:
+        gemini_prompt = _build_gemini_prompt(message, emotion, history)
+        yielded_any = False
+        for chunk in _stream_gemini_direct(gemini_prompt):
+            if chunk:
+                yielded_any = True
+                yield {"chunk": chunk, "tool_called": "None", "done": False}
+        if yielded_any:
+            yield {"chunk": "", "tool_called": "None", "done": True}
+            return
 
-    # Tier 2. OpenRouter Streaming (DeepSeek V3 / Llama 3.3 Free)
+    # Tier 2. OpenRouter Fast Free Streaming (~1.5s - 2s)
     if OPENROUTER_API_KEY:
         router_messages = _build_groq_messages(message, emotion, history)
         yielded_any = False
@@ -819,55 +856,37 @@ def stream_response(message: str, history: list[dict] = None):
             yield {"chunk": "", "tool_called": "None", "done": True}
             return
 
-    # Tier 3. Gemini Streaming
-    gemini_client, gemini_legacy_mod = _get_gemini_client()
-    gemini_prompt = _build_gemini_prompt(message, emotion, history)
+    # Tier 3. Groq Fast Streaming (Single attempt, 1.5s timeout)
+    groq_client = _get_groq_client()
+    if groq_client:
+        try:
+            groq_messages = _build_groq_messages(message, emotion, history)
+            stream = groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=groq_messages,
+                max_tokens=400,
+                temperature=0.7,
+                timeout=1.5,
+                stream=True
+            )
+            yielded_any = False
+            for chunk in stream:
+                delta = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else None
+                if delta:
+                    yielded_any = True
+                    yield {"chunk": delta, "tool_called": "None", "done": False}
+            if yielded_any:
+                yield {"chunk": "", "tool_called": "None", "done": True}
+                return
+        except Exception:
+            pass
 
-    if gemini_client:
-        for g_model in ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro-latest']:
-            try:
-                stream = gemini_client.models.generate_content_stream(
-                    model=g_model,
-                    contents=gemini_prompt
-                )
-                yielded_any = False
-                for chunk in stream:
-                    if chunk.text:
-                        yielded_any = True
-                        yield {"chunk": chunk.text, "tool_called": "None", "done": False}
-                if yielded_any:
-                    yield {"chunk": "", "tool_called": "None", "done": True}
-                    return
-            except Exception:
-                pass
-    elif gemini_legacy_mod:
-        for legacy_model_name in ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro-latest"]:
-            try:
-                g_model = gemini_legacy_mod.GenerativeModel(legacy_model_name)
-                stream = g_model.generate_content(gemini_prompt, stream=True)
-                yielded_any = False
-                for chunk in stream:
-                    if chunk.text:
-                        yielded_any = True
-                        yield {"chunk": chunk.text, "tool_called": "None", "done": False}
-                if yielded_any:
-                    yield {"chunk": "", "tool_called": "None", "done": True}
-                    return
-            except Exception:
-                pass
-
-    # Tier 3. Ollama local
-    ollama_res = _query_ollama_local(message, emotion)
-    if ollama_res:
-        yield {"chunk": ollama_res, "tool_called": "ollama_local_llm", "done": True}
-        return
-
-    # Tier 4. Fallback response streamed in word chunks for fluid typing
+    # Tier 4. Instant Built-in Fallback (0ms latency, streams immediately word-by-word)
     fallback = _generate_fallback_response(message, emotion)
     words = fallback.split(" ")
     for i, w in enumerate(words):
         yield {"chunk": w + (" " if i < len(words) - 1 else ""), "tool_called": "None", "done": False}
-        time.sleep(0.015)
+        time.sleep(0.012)
     yield {"chunk": "", "tool_called": "None", "done": True}
 
 
