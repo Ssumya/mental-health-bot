@@ -19,15 +19,14 @@ from config import (
 # ── High-Speed Model Configurations ───────────────────────────────────────────
 GEMINI_FAST_MODELS = [
     "gemini-flash-lite-latest",
-    "gemini-flash-latest",
-    "gemini-2.5-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
 ]
 
 OPENROUTER_FAST_MODELS = [
     "baidu/ernie-5.5-flash-preview:free",
     "inclusionai/ling-3.2-flash:free",
     "nvidia/nemotron-3.5-lightning:free",
-    "google/gemma-4-26b-a4b-it:free",
 ]
 
 
@@ -47,7 +46,7 @@ def _stream_gemini_direct(prompt: str):
                 data=json.dumps(payload).encode("utf-8"),
                 headers={"Content-Type": "application/json"}
             )
-            resp = urllib.request.urlopen(req, timeout=3.5)
+            resp = urllib.request.urlopen(req, timeout=2.5)
             has_yielded = False
             for raw_line in resp:
                 line = raw_line.decode("utf-8").strip()
@@ -82,7 +81,7 @@ def _query_gemini_direct(prompt: str) -> str | None:
                 data=json.dumps(payload).encode("utf-8"),
                 headers={"Content-Type": "application/json"}
             )
-            with urllib.request.urlopen(req, timeout=3.5) as resp:
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
                 d = json.loads(resp.read().decode("utf-8"))
                 txt = d.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                 if txt and txt.strip():
