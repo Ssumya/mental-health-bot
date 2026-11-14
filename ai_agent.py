@@ -388,7 +388,7 @@ def _generate_fallback_response(message: str, emotion: str) -> str:
 def _build_groq_messages(message: str, emotion: str, history: list[dict] = None) -> list[dict]:
     msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
     if history:
-        for turn in history[-8:]:
+        for turn in history[-10:]:
             role = "user" if turn.get("role") == "user" else "assistant"
             content = turn.get("content") or turn.get("message") or ""
             if content.strip():
@@ -403,7 +403,7 @@ def _build_groq_messages(message: str, emotion: str, history: list[dict] = None)
 def _build_gemini_prompt(message: str, emotion: str, history: list[dict] = None) -> str:
     convo = ""
     if history:
-        for turn in history[-6:]:
+        for turn in history[-10:]:
             speaker = "User" if turn.get("role") == "user" else "Assistant"
             content = turn.get("content") or turn.get("message") or ""
             if content.strip():
